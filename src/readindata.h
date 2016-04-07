@@ -1,8 +1,11 @@
-#ifndef READINDATA_H
-#define READINDATA_H
+#ifndef SV_READINDATA_H
+#define SV_READINDATA_H
 
-#include "parameters.h"
+#include "SV_parameters.h"
+//#include "../src/sorter.h"
+#include "sorter.h"
 #include<fstream>
+#include<vector>
 using namespace std;
 
 typedef struct
@@ -25,7 +28,7 @@ typedef struct
 
 typedef struct
 {
-   double tau, xpt, ypt, r, phi;
+   double tau, xpt, ypt, r, phi, sin_phi, cos_phi;
    double da0, da1, da2;
    double vx, vy, gammaT;
    double Edec, Tdec, Pdec;
@@ -54,25 +57,35 @@ typedef struct
   double decays_branchratio[Maxdecaychannel];
   int decays_part[Maxdecaychannel][Maxdecaypart];
   double mu;
+  double thermal_yield;
+  double percent_contribution;	//used to compute approximate percentage contribution of particle to net yield of some daughter particle
+  double effective_branchratio;	//the effective branching ratio of generic resonance to some specified daughter particle
+				//N.B. - effective branching ratio may be larger than 1
+  double decays_effective_branchratio[Maxdecaychannel];
+				//similar to effective_branchratio, but specific to each decay channel
   int sign;       //Bose-Einstein or Dirac-Fermi statistics
 }particle_info;
 
-void set_to_zero(double * array, int arraylength);
 void read_hydropar(hydropara* hp, string localpath);
 int get_filelength(string filepath);
+int get_filewidth(string filepath);
 void read_decdat(int length, FO_surf* surf_ptr, string localpath, bool include_bulk_pi = false);
 void read_surfdat(int length, FO_surf* surf_ptr, string localpath);
 void read_decdat_mu(int FO_length, int N_stable, double** particle_mu, string localpath);
 int read_resonance(particle_info* particle);
 void calculate_particle_mu(int IEOS, int Nparticle, FO_surf* FOsurf_ptr, int FO_length, particle_info* particle, double** particle_mu);
-void compute_total_contribution_percentages(int stable_particle_idx, int Nparticle, particle_info* particle, double * all_particle_thermal, double * percentages, double * effective_widths);
-void estimate_resonance_thermal(int Nparticle, particle_info* particle, double Temperature, double * all_particle_thermal);
-double b_j_to_i(particle_info * all_particles, int Nparticle, int j, int i);
+void compute_total_contribution_percentages(int stable_particle_idx, int Nparticle, particle_info* particle);
+void calculate_thermal_particle_yield(int Nparticle, particle_info* particle, double Temperature);
+double b_j_to_i(particle_info * particle, int Nparticle, int j, int i, int verbose_monval = 0);
 int count_targets(int * decay_channel_particles, particle_info * i);
 int count_stable(particle_info * all_particles, int Nparticle, int * decay_channel_particles);
 bool is_stable(particle_info * all_particles, int Nparticle, int monval);
 int set_stable_particle_monval();
 int lookup_particle_id_from_monval(particle_info * all_particles, int Nparticle, int monval);
 void print_particle_stability(particle_info * all_particles, int Nparticle);
+int get_number_of_decay_channels(vector<int> chosen_resonances, particle_info * particle);
+void get_important_resonances(int chosen_target_particle_idx, vector<int> * chosen_resonance_indices_ptr, particle_info * particle, int Nparticle, double threshold, std::ofstream& output);
+void get_all_descendants(vector<int> * chosen_resonance_indices_ptr, particle_info * particle, int Nparticle, std::ofstream& output);
+void sort_by_mass(vector<int> * chosen_resonance_indices_ptr, particle_info * particle, int Nparticle, std::ofstream& output);
 
 #endif

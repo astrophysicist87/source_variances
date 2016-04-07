@@ -1,5 +1,5 @@
-#ifndef GENERATE_PROCESSING_RECORD_H
-#define GENERATE_PROCESSING_RECORD_H
+#ifndef SV_GENERATE_PROCESSING_RECORD_H
+#define SV_GENERATE_PROCESSING_RECORD_H
 
 #include <string>
 #include <sstream>
@@ -8,7 +8,7 @@
 using namespace std;
 
 #include "plumberglib.h"
-#include "parameters.h"
+#include "SV_parameters.h"
 
 void initialize_PRfile(string currentworkingdirectory, string PRfilename = "Processing_record.txt")
 {

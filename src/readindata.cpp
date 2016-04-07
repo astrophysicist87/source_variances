@@ -6,21 +6,16 @@
 #include<iomanip>
 #include<cstdlib>
 #include<gsl/gsl_sf_bessel.h>
+#include<vector>
+#include<algorithm>
 
-#include "readindata.h"
+#include "SV_readindata.h"
 using namespace std;
 
 double * stable_particle_monval;
 int Nstable_particle;
 double ** all_b_j_to_i;
 bool output_mu_and_yield = false;
-
-void set_to_zero(double * array, int arraylength)
-{
-	for (int arrayidx=0; arrayidx<arraylength; arrayidx++) array[arrayidx] = 0.0;
-	
-	return;
-}
 
 void read_hydropar(hydropara* hp, string localpath)
 {
@@ -116,6 +111,24 @@ int get_filelength(string filepath)
    return(length);
 }
 
+int get_filewidth(string filepath)
+{
+	ostringstream filepath_stream;
+	filepath_stream << filepath;
+	ifstream infile(filepath_stream.str().c_str());
+	string line, temp;
+	stringstream ss;
+	int ncols=0;
+	getline(infile, line);
+	ss.clear();
+	ss << line;
+    
+	while (ss >> temp)
+		ncols++;
+
+	return ncols;
+}
+
 void read_decdat(int length, FO_surf* surf_ptr, string localpath, bool include_bulk_pi /* = false*/)
 { 
   //cout<<"read in information on freeze out surface...";
@@ -166,6 +179,8 @@ void read_surfdat(int length, FO_surf* surf_ptr, string localpath)
      surfdat >> surf_ptr[i].ypt;
      surf_ptr[i].r = sqrt(surf_ptr[i].xpt*surf_ptr[i].xpt + surf_ptr[i].ypt*surf_ptr[i].ypt);
      surf_ptr[i].phi = atan2(surf_ptr[i].ypt, surf_ptr[i].xpt);
+     surf_ptr[i].sin_phi = sin(surf_ptr[i].phi);
+     surf_ptr[i].cos_phi = cos(surf_ptr[i].phi);
      surfdat.getline(rest_dummy, 512);
   }
   surfdat.close();
@@ -266,7 +281,7 @@ int read_resonance(particle_info* particle)
          {
             particle[local_i].decays_Npart[j]=particle[local_i-1].decays_Npart[j];
             particle[local_i].decays_branchratio[j]=particle[local_i-1].decays_branchratio[j];
-            //for (int k=0; k< Maxdecaypart; k++)						//commented out by Chris Plumberg - 06/11/2015
+            //for (int k=0; k< Maxdecaypart; k++)						//commented out by Chris Plumberg - 06/08/2015
             //   particle[local_i].decays_part[j][k]=particle[local_i-1].decays_part[j][k];
             for (int k=0; k< Maxdecaypart; k++)							//replaced with following k-loop
             {
@@ -309,37 +324,32 @@ int read_resonance(particle_info* particle)
 
 void calculate_particle_mu(int IEOS, int Nparticle, FO_surf* FOsurf_ptr, int FO_length, particle_info* particle, double** particle_mu)
 {
-Nstable_particle = set_stable_particle_monval();
-
+	Nstable_particle = set_stable_particle_monval();
       for(int i=0; i<Nstable_particle; i++)
          for(int j=0; j<Nparticle; j++)
             if(particle[j].monval == stable_particle_monval[i])
             {
                particle[j].stable = 1;
-               //for(int k=0; k<1; k++)
                for(int k=0; k<FO_length; k++)
                    FOsurf_ptr[k].particle_mu[j] = particle_mu[i][k];
                break;
             }
 
-      for(int i=0; i < Nparticle ; i++)						//for all 320 particles,
+      for(int i=0; i < Nparticle ; i++)
       {
-         if(particle[i].stable==0)						//if the particle is unstable,
+         if(particle[i].stable==0)
          {
-            for(int j=0; j < particle[i].decays; j++)				//look at each of the particle's decay channels.
+            for(int j=0; j < particle[i].decays; j++)
             {
-               for(int k=0; k < abs(particle[i].decays_Npart[j]); k++)		//then, for each of the daughter particles of that decay channel,
+               for(int k=0; k < abs(particle[i].decays_Npart[j]); k++)
                {
-                  for(int l=0; l < Nparticle; l++)				//loop through all 319 particles again to find that daughter particle.
+                  for(int l=0; l < Nparticle; l++)
                   {
-                     if(particle[i].decays_part[j][k] == particle[l].monval)	//once you've found it,
+                     if(particle[i].decays_part[j][k] == particle[l].monval)
                      {
-			//for(int m=0; m<1; m++)				//update the chemical potential for the original particle along the FO surface in the following way:
-                        for(int m=0; m<FO_length; m++)				//update the chemical potential for the original particle along the FO surface in the following way:
+                        for(int m=0; m<FO_length; m++)
                           FOsurf_ptr[m].particle_mu[i] += particle[i].decays_branchratio[j]*FOsurf_ptr[m].particle_mu[l];
-                        break;							//note that the pdg list is organized in such a way as to force unstable particles to decay *only* into
-										//other preceding particles in the file.  particle_mu[i] is therefore only updated by chemical potentials
-										//which have themselves already been fully calculated.
+                        break;
                      }
                      if(l==Nparticle-1)
                         cout<<"warning: can not find particle" <<  particle[i].name << endl;
@@ -348,32 +358,32 @@ Nstable_particle = set_stable_particle_monval();
             }
          }
       }
-   //}
-	for(int i = 0; i < Nparticle; i++)
+	for(int i = 0; i < Nparticle; i++)	//set particle.mus for easy access --> assumes mu is constant along FO surface
 		particle[i].mu = FOsurf_ptr[0].particle_mu[i];
    return;
 }
 
-void estimate_resonance_thermal(int Nparticle, particle_info* particle, double Temperature, double * all_particle_thermal)
+void calculate_thermal_particle_yield(int Nparticle, particle_info* particle, double Temperature)
 {
 	double one_by_Tconv = 1./Temperature;
-	double * all_particle_fugacities = new double [Maxparticle];
-	set_to_zero(all_particle_thermal, Nparticle);
+	//double * all_particle_fugacities = new double [Maxparticle];
+	//set_to_zero(all_particle_thermal, Nparticle);
 	for (int j = 0; j < Nparticle; j++)
 	{
+		double yield = 0.0, fugacity = 0.0;
 		double gj = particle[j].gspin;
 		double mj = particle[j].mass;
 		if (mj == 0)
 		{
-			all_particle_fugacities[j] = 0.0;
-			all_particle_thermal[j] = 0.0;
+			fugacity = 0.0;
+			particle[j].thermal_yield = 0.0;
 			continue;
 		}
 		double pm = -particle[j].sign;
-		all_particle_fugacities[j] = exp(one_by_Tconv * particle[j].mu);
+		fugacity = exp(one_by_Tconv * particle[j].mu);
 		for (int k = 1; k <= 10; k++)
-			all_particle_thermal[j] += double(pow(pm, k+1))*pow(all_particle_fugacities[j], (double)k)*gsl_sf_bessel_Kn(2, double(k)*mj*one_by_Tconv)/double(k);
-		all_particle_thermal[j] *= gj*mj*mj/(2.*M_PI*M_PI);
+			yield += double(pow(pm, k+1))*pow(fugacity, (double)k)*gsl_sf_bessel_Kn(2, double(k)*mj*one_by_Tconv)/double(k);
+		particle[j].thermal_yield = yield*gj*mj*mj/(2.*M_PI*M_PI);
 	}
 	//**********************************************************************
 	if (output_mu_and_yield)
@@ -382,7 +392,7 @@ void estimate_resonance_thermal(int Nparticle, particle_info* particle, double T
 		output_stream << "check_mu_and_yield.dat";
 		ofstream output(output_stream.str().c_str());
 		for (int j = 0; j < Nparticle; j++)
-			output << particle[j].name << "   " << particle[j].mu << "   " << all_particle_thermal[j] << endl;
+			output << particle[j].name << "   " << particle[j].mu << "   " << particle[j].thermal_yield << endl;
 		output.close();
 	}
 	//**********************************************************************
@@ -390,13 +400,13 @@ void estimate_resonance_thermal(int Nparticle, particle_info* particle, double T
 	return;
 }
 
-void compute_total_contribution_percentages(int stable_particle_idx, int Nparticle, particle_info* particle, double * all_particle_thermal, double * percentages, double * effective_widths)
+void compute_total_contribution_percentages(int stable_particle_idx, int Nparticle, particle_info* particle)
 {
 	double denominator = 0.0, temp;
-	set_to_zero(percentages, Nparticle);
 	all_b_j_to_i = new double * [Nparticle];
 	for (int i = 0; i < Nparticle; i++)
 	{
+		particle[i].percent_contribution = 0.0;
 		all_b_j_to_i[i] = new double [Nparticle];
 		for (int j = 0; j < Nparticle; j++)
 			all_b_j_to_i[i][j] = 0.0;
@@ -404,23 +414,23 @@ void compute_total_contribution_percentages(int stable_particle_idx, int Npartic
 	for (int i = 0; i < Nparticle; i++)
 	{
 		temp = b_j_to_i(particle, Nparticle, i, stable_particle_idx);
-		percentages[i] = temp * all_particle_thermal[i];
-		effective_widths[i] = temp;
-		denominator += temp * all_particle_thermal[i];
+		particle[i].percent_contribution = temp * particle[i].thermal_yield;
+		particle[i].effective_branchratio = temp;
+		denominator += temp * particle[i].thermal_yield;
 	}
 	for (int i = 0; i < Nparticle; i++)
-		percentages[i] /= 0.01 * denominator;	//0.01 factor makes it a percentage
+		particle[i].percent_contribution /= 0.01 * denominator;	//0.01 factor makes it a percentage
 	
 	return;
 }
 
-double b_j_to_i(particle_info * all_particles, int Nparticle, int j, int i)
+double b_j_to_i(particle_info * particle, int Nparticle, int j, int i, int verbose_monval /* = 0*/)
 {
 	double result = 0.0;
-	particle_info parent = all_particles[j];
-	particle_info target = all_particles[i];
+	particle_info parent = particle[j];
+	particle_info target = particle[i];
 	int verbose = 0;
-	//if (parent.monval == 22212 || parent.monval == 10225) verbose = 1;
+	if (parent.monval == verbose_monval) verbose = 1;
 	if (verbose > 0) cout << "Currently looking at decay chains of " << parent.name << " to " << target.name << ":" << endl;
 	if ( (parent.decays == 1) && (parent.decays_Npart[0] == 1) )
 	{
@@ -430,7 +440,7 @@ double b_j_to_i(particle_info * all_particles, int Nparticle, int j, int i)
 	else
 	{
 		if (verbose > 0) cout << "   --> " << parent.name << " is unstable, so continuing!" << endl;
-		//all_particles[j].stable == 0;	//just in case
+		//particle[j].stable == 0;	//just in case
 	}
 	
 	// added this to try to save some time and simplify debugging output
@@ -445,7 +455,7 @@ double b_j_to_i(particle_info * all_particles, int Nparticle, int j, int i)
 	{
 		int nki = count_targets(parent.decays_part[k], &target);	// number of target decay particles in kth decay channel
 		double bk = parent.decays_branchratio[k];			// branching ratio for kth decay channel
-		int nks = count_stable(all_particles, Nparticle, parent.decays_part[k]);			// number of stable decay particles in kth decay channel
+		int nks = count_stable(particle, Nparticle, parent.decays_part[k]);			// number of stable decay particles in kth decay channel
 		int nktot = abs(parent.decays_Npart[k]);				// total number of decay particles in kth decay channel
 		if (verbose > 0) cout << " - " << parent.name << "(monval = " << parent.monval << "): decay channel " << k + 1 << " of " << parent.decays << endl;
 		if (verbose > 0) cout << "   --> nki = " << nki << ", nks = " << nks << ", nktot = " << nktot << endl;
@@ -455,19 +465,23 @@ double b_j_to_i(particle_info * all_particles, int Nparticle, int j, int i)
 			continue;			// if kth decay channel contains no target particles or other particles which might decay to some
 		}
 		if (nki != 0) result += double(nki)*bk;				// if kth decay channel contains target particles
+		parent.decays_effective_branchratio[k] = double(nki)*bk;
+		particle[j].decays_effective_branchratio[k] = double(nki)*bk;
 		if (nks != nktot)						// if there are unstable particles
 		{
 			if (verbose > 0) cout << "   --> found some unstable particles!" << endl;
 			for (int ipart = 0; ipart < nktot; ipart++)
 			{		// apply this same process recursively to all unstable daughter resonances
-				if ( !is_stable( all_particles, Nparticle, parent.decays_part[k][ipart] ) )
+				if ( !is_stable( particle, Nparticle, parent.decays_part[k][ipart] ) )
 				{
-					int decay_particle_idx = lookup_particle_id_from_monval(all_particles, Nparticle, parent.decays_part[k][ipart]);
-					if (verbose > 0) cout << "   --> now working on unstable particle (" << all_particles[decay_particle_idx].name << ") with monval = "
+					int decay_particle_idx = lookup_particle_id_from_monval(particle, Nparticle, parent.decays_part[k][ipart]);
+					if (verbose > 0) cout << "   --> now working on unstable particle (" << particle[decay_particle_idx].name << ") with monval = "
 						<< parent.decays_part[k][ipart] << endl << endl;
-					double temp_bj2i = b_j_to_i(all_particles, Nparticle, decay_particle_idx, i);
+					double temp_bj2i = b_j_to_i(particle, Nparticle, decay_particle_idx, i);
 					if (verbose > 0) cout << "   --> " << parent.name << "-->" << target.name << ": using b_j_to_i = " << temp_bj2i << endl;
 					result += bk * temp_bj2i;
+					parent.decays_effective_branchratio[k] += bk * temp_bj2i;
+					particle[j].decays_effective_branchratio[k] += bk * temp_bj2i;
 				}
 			}
 		}
@@ -479,17 +493,17 @@ double b_j_to_i(particle_info * all_particles, int Nparticle, int j, int i)
 	return (result);
 }
 
-int lookup_particle_id_from_monval(particle_info * all_particles, int Nparticle, int monval)
+int lookup_particle_id_from_monval(particle_info * particle, int Nparticle, int monval)
 {
 	for (int ipart = 0; ipart < Nparticle; ipart++)
 	{
-		//cout << "lookup(" << monval << "): " << all_particles[ipart].name << "   " << all_particles[ipart].monval << endl;
-		if (monval == all_particles[ipart].monval) return ipart;
+		//cout << "lookup(" << monval << "): " << particle[ipart].name << "   " << particle[ipart].monval << endl;
+		if (monval == particle[ipart].monval) return ipart;
 	}
 	cerr << "monval = " << monval << endl;
 	cerr << "Only available monvals are:" << endl;
 	for (int ipart = 0; ipart < Nparticle; ipart++)
-		cerr << all_particles[ipart].name << "   " << all_particles[ipart].monval << endl;
+		cerr << particle[ipart].name << "   " << particle[ipart].monval << endl;
 	cerr << "Could not find monval in PDG table!  Aborting..." << endl;
 	exit(1);
 }
@@ -502,26 +516,21 @@ int count_targets(int * decay_channel_particles, particle_info * i)
 	return(count);
 }
 
-int count_stable(particle_info * all_particles, int Nparticle, int * decay_channel_particles)
+int count_stable(particle_info * particle, int Nparticle, int * decay_channel_particles)
 {
 	int count = 0;
 	for (int idcp = 0; idcp < Maxdecaypart; idcp++)
 	{
 		if (decay_channel_particles[idcp] == 0) continue;
-		if (is_stable(all_particles, Nparticle, decay_channel_particles[idcp])) count++;
+		if (is_stable(particle, Nparticle, decay_channel_particles[idcp])) count++;
 	}
 	return(count);
 }
 
-bool is_stable(particle_info * all_particles, int Nparticle, int monval)
+bool is_stable(particle_info * particle, int Nparticle, int monval)
 {
-	//*** dumb way of doing things
-	//for (int idx = 0; idx < Nstable_particle; idx++)	//include photon as stable particle
-	//	if ((monval == stable_particle_monval[idx]) || (monval == 22)) return true;
-	//return false;
-	//*** better way of doing things
-	int local_idx = lookup_particle_id_from_monval(all_particles, Nparticle, monval);
-	return(all_particles[local_idx].decays_Npart[0] == 1);
+	int local_idx = lookup_particle_id_from_monval(particle, Nparticle, monval);
+	return(particle[local_idx].decays_Npart[0] == 1);
 }
 
 int set_stable_particle_monval()
@@ -551,12 +560,158 @@ int set_stable_particle_monval()
 	return(local_Nstable_particle);
 }
 
-void print_particle_stability(particle_info * all_particles, int Nparticle)
+void print_particle_stability(particle_info * particle, int Nparticle)
 {
 	for (int ipart = 0; ipart < Nparticle; ipart++)
-		cout << all_particles[ipart].name << "   " << all_particles[ipart].monval << "   " << all_particles[ipart].mass << "   " << all_particles[ipart].stable << endl;
+		cout << particle[ipart].name << "   " << particle[ipart].monval << "   " << particle[ipart].mass << "   " << particle[ipart].stable << endl;
 	return;
 }
 
+int get_number_of_decay_channels(vector<int> chosen_resonances, particle_info * particle)
+{
+	int count = 0, total_number_of_decays = 0;
+	//cerr << "get_number_of_decay_channels(): (int)chosen_resonances.size() = " << (int)chosen_resonances.size() << endl;
+	for (int icr = 0; icr < (int)chosen_resonances.size(); icr++)
+	{
+		//cerr << "get_number_of_decay_channels(): accessing icr = " << icr << ", chosen_resonances[" << icr << "] = " << chosen_resonances[icr] << endl;
+		total_number_of_decays = particle[chosen_resonances[icr]].decays;
+		//cerr << "get_number_of_decay_channels(): total_number_of_decays = " << total_number_of_decays << endl;
+		//for (int idecay = 0; idecay < total_number_of_decays; idecay++)
+		//	count += (particle[chosen_resonances[icr]].decays_effective_branchratio[idecay] > 1e-12) ? 1 : 0;
+		count += total_number_of_decays;
+		//cerr << "get_number_of_decay_channels(): count = " << count << endl;
+	}
+	return count;
+}
+
+
+
+void get_important_resonances(int chosen_target_particle_idx, vector<int> * chosen_resonance_indices_ptr, particle_info * particle, int Nparticle, double threshold, std::ofstream& output)
+{
+	//**********************************************************************************
+	//SELECT RESONANCES TO INCLUDE IN SOURCE VARIANCES CALCULATIONS
+	//sort resonances by importance and loop over all resonances needed to achieve a certain minimum percentage of total decay pions
+	//double threshold = 0.6;	//include only enough of the most important resonances to account for fixed fraction of total resonance-decay pion(+)s
+					//threshold = 1.0 means include all resonance-decay pion(+)s,
+					//threshold = 0.0 means include none of them
+	vector<double> percent_contributions;
+	for (int i = 0; i < Nparticle; i++)
+		percent_contributions.push_back(particle[i].percent_contribution);
+	vector<size_t> sorted_resonance_indices = ordered(percent_contributions);
+	reverse(sorted_resonance_indices.begin(), sorted_resonance_indices.end());
+	//vector<int> chosen_resonance_indices_ptr;
+	double running_total_percentage = 0.0;
+	int count = 0;
+	if (threshold < 1e-12)
+	{
+		output << "No resonances included." << endl;
+	}
+	else if (fabs(1. - threshold) < 1e-12)
+	{
+		count = Nparticle;	//			if (sorted_resonance_indices[ii - 1] == chosen_target_particle_idx)
+		for (int ii = 1; ii <= count; ii++)
+			(*chosen_resonance_indices_ptr).push_back(sorted_resonance_indices[ii - 1]);
+		output << "All resonances included." << endl;
+	}
+	else
+	{
+		while (running_total_percentage <= threshold)
+		{
+			running_total_percentage += 0.01 * particle[sorted_resonance_indices[count]].percent_contribution;
+			(*chosen_resonance_indices_ptr).push_back(sorted_resonance_indices[count]);
+			count++;
+		}
+		if ((*chosen_resonance_indices_ptr).size() == 0)
+		{
+			output << "No resonances included!  Choose a higher threshold!" << endl;
+			exit(1);
+		}
+		else
+		{
+			output << "Including the following " << count << " resonances (accounting for " << 100.*running_total_percentage
+				<< "%, threshold = " << 100.*threshold << "%): " << endl;
+			for (int ii = 1; ii <= count; ii++)
+				output << "\t" << ii << ": " << particle[sorted_resonance_indices[ii - 1]].name << endl;
+		}
+	}
+	//END OF CODE SELECTING INCLUDED RESONANCES
+	//**********************************************************************************
+	
+	return;
+}
+
+void get_all_descendants(vector<int> * chosen_resonance_indices_ptr, particle_info * particle, int Nparticle, std::ofstream& output)
+{
+	// This function ensures that no particles are missing from the chosen_resonances vector,
+	// even if a truncated (threshold < 1.0) version is used
+	int amount_of_output = 1;
+	bool no_missing_descendants = false;
+	int original_size = (int)(*chosen_resonance_indices_ptr).size();
+	while (!no_missing_descendants)
+	{
+		int old_size = (int)(*chosen_resonance_indices_ptr).size();
+		int new_size = old_size;
+		for (int icr = 0; icr < old_size; icr++)
+		{
+			particle_info resonance = particle[(*chosen_resonance_indices_ptr)[icr]];
+			if (amount_of_output > 1) output << "Currently looking at resonance " << resonance.name << endl;
+			if (resonance.stable == 1 && resonance.decays_Npart[0] == 1)
+				continue;
+			int number_of_decays = resonance.decays;
+			for (int k = 0; k < number_of_decays; k++)
+			{
+				if (amount_of_output > 1) output << resonance.name << ": currently looking at decay #" << k << endl;
+				int nb = abs(resonance.decays_Npart[k]);
+				for (int l = 0; l < nb; l++)
+				{
+					int pid = lookup_particle_id_from_monval(particle, Nparticle, resonance.decays_part[k][l]);
+					if (amount_of_output > 1) output << resonance.name << ", decay #" << k
+								<< ": currently looking at daughter " << particle[pid].name << endl;
+					//if this decay particle is not in the list and has large effective br, include it
+					bool decay_particle_is_not_in_list = ( find ((*chosen_resonance_indices_ptr).begin(), (*chosen_resonance_indices_ptr).end(), pid)
+															==
+															(*chosen_resonance_indices_ptr).end() );
+					bool br_tot_is_not_small = ( particle[pid].effective_branchratio >= 1.e-12 );
+					if (decay_particle_is_not_in_list)
+						if (amount_of_output > 1) output << resonance.name << ", decay #" << k
+							<< ", daughter " << particle[pid].name << ": daughter is not in list!" << endl;
+					if (br_tot_is_not_small)
+						if (amount_of_output > 1) output << resonance.name << ", decay #" << k
+							<< ", daughter " << particle[pid].name << ": effective br. is not small!" << endl;
+					if (decay_particle_is_not_in_list && br_tot_is_not_small)
+					{
+						(*chosen_resonance_indices_ptr).push_back(pid);
+						if (amount_of_output > 1) output << resonance.name << ", decay #" << k
+							<< ", daughter " << particle[pid].name << ": adding daughter to list!" << endl;
+						new_size++;
+					}
+				}
+			}
+		}
+		no_missing_descendants = ( old_size == new_size );
+		if (new_size == original_size)
+			if (amount_of_output > 0) output << "get_all_descendants(): No new particles added!" << endl;
+		else
+			if (amount_of_output > 0) output << "get_all_descendants(): " << new_size - original_size << " new particles added!" << endl;
+	}
+	return;
+}
+
+void sort_by_mass(vector<int> * chosen_resonance_indices_ptr, particle_info * particle, int Nparticle, std::ofstream& output)
+{	//with the heaviest first
+	output << "sort_by_mass(): Sorting by mass..." << endl;
+	int number_of_chosen_particles = (int)(*chosen_resonance_indices_ptr).size();
+	for (int m = 0; m < number_of_chosen_particles; m++)
+	for (int n = 0; n < number_of_chosen_particles - m - 1; n++)
+	if (particle[(*chosen_resonance_indices_ptr)[n]].mass < particle[(*chosen_resonance_indices_ptr)[n + 1]].mass)
+	{
+		// swap them
+		int particle_idx = (*chosen_resonance_indices_ptr)[n + 1];
+		(*chosen_resonance_indices_ptr)[n + 1] = (*chosen_resonance_indices_ptr)[n];
+		(*chosen_resonance_indices_ptr)[n] = particle_idx;
+	}
+	output << "sort_by_mass(): ...finished!" << endl;
+	return;
+}
 
 //End of file
