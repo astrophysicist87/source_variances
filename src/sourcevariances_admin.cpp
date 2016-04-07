@@ -239,36 +239,16 @@ SourceVariances::SourceVariances(particle_info* particle, particle_info* all_par
 		}
 	}
 
-	s_pts = new double * [n_decay_channels];
-	s_wts = new double * [n_decay_channels];
 	v_pts = new double [n_v_pts];
 	v_wts = new double [n_v_pts];
 	zeta_pts = new double [n_zeta_pts];
 	zeta_wts = new double [n_zeta_pts];
-	for (int idc=0; idc<n_decay_channels; idc++)
-	{
-		s_pts[idc] = new double [n_s_pts];
-		s_wts[idc] = new double [n_s_pts];
-	}
 
 //cerr << "setting gaussian integrations points..." << endl;
 	//initialize all gaussian points for resonance integrals
 	//syntax: int gauss_quadrature(int order, int kind, double alpha, double beta, double a, double b, double x[], double w[])
 	gauss_quadrature(n_zeta_pts, 1, 0.0, 0.0, zeta_min, zeta_max, zeta_pts, zeta_wts);
 	gauss_quadrature(n_v_pts, 1, 0.0, 0.0, v_min, v_max, v_pts, v_wts);
-	for (int idc = 0; idc < n_decay_channels; idc++)
-	{
-		//cerr << "working on resonance #" << idc << "..." << endl;
-		double Gamma_temp = decay_channels[idc].resonance_Gamma;
-		double m2_temp = decay_channels[idc].resonance_decay_masses[0];
-		double m3_temp = decay_channels[idc].resonance_decay_masses[1];
-		double M_temp = decay_channels[idc].resonance_mass;
-		double s_min_temp = (m2_temp + m3_temp)*(m2_temp + m3_temp);
-		double s_max_temp = (M_temp - particle_mass)*(M_temp - particle_mass);
-		// N.B. - this is only really necessary for 3-body decays,
-		//			but doesn't cause any problems for 2-body and is easier/simpler to code...
-		gauss_quadrature(n_s_pts, 1, 0.0, 0.0, s_min_temp, s_max_temp, s_pts[idc], s_wts[idc]);
-	}
 	//for (int iv = 0; iv < n_v_pts; iv++)
 	//	*global_out_stream_ptr << setw(8) << setprecision(15) << "v_pts[" << iv << "] = " << v_pts[iv] << " and v_wts[" << iv << "] = " << v_wts[iv] << endl;
 	//for (int izeta = 0; izeta < n_zeta_pts; izeta++)
@@ -666,8 +646,8 @@ void SourceVariances::Allocate_decay_channel_info()
 			VEC_n2_alpha_m[iv][izeta] = new double [4];
 		}
 	}
-	NEW_s_pts = new double [n_s_pts];
-	NEW_s_wts = new double [n_s_pts];
+	s_pts = new double [n_s_pts];
+	s_wts = new double [n_s_pts];
 	VEC_pstar = new double [n_s_pts];
 	VEC_Estar = new double [n_s_pts];
 	VEC_DeltaY = new double [n_s_pts];
@@ -807,8 +787,8 @@ void SourceVariances::Delete_decay_channel_info()
 		delete [] VEC_Pm[is];
 		delete [] VEC_alpha_m[is];
 	}
-	delete [] NEW_s_pts;
-	delete [] NEW_s_wts;
+	delete [] s_pts;
+	delete [] s_wts;
 	delete [] VEC_pstar;
 	delete [] VEC_Estar;
 	delete [] VEC_DeltaY;
@@ -1068,6 +1048,7 @@ double SourceVariances::Edndp3(const double ptr, const double phir, const int pn
 
 	return val;
 }
+
 
 void SourceVariances::Edndp3(double ptr, double phir, double * results)
 {//move loop over n_weighting_functions inside this function

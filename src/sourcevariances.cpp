@@ -38,31 +38,6 @@ void check_for_NaNs(string variable_name, const T variable_value, ofstream& loca
 	return;
 }
 
-//need to define some variables for quick evaluation of S_direct
-double Sdir_Y = 0.0, Sdir_R = 5., Sdir_Deltau = 1., Sdir_Deleta = 1.2;
-double Sdir_eta0 = 0.0, Sdir_tau0 = 5., Sdir_etaf = 0.0, Sdir_T = 0.15;
-double Sdir_prefactor, Sdir_rt, Sdir_H, Sdir_etat, Sdir_ch_Y_m_eta, Sdir_expon;
-double Sdir_term1, Sdir_term2, Sdir_term3;
-
-double SourceVariances::S_direct(double r, double eta, double tau, double MT, double PT, double cos_phi_m_Phi)
-{
-	//Sdir_prefactor = (2.*Sdir_Jr + 1.)/(twopi*twopi*twopi);
-	Sdir_rt = r/Sdir_R;
-	Sdir_term1 = 0.5*Sdir_rt*Sdir_rt;
-	Sdir_term2 = 0.0*0.5*(eta-Sdir_eta0)*(eta-Sdir_eta0)/(Sdir_Deleta*Sdir_Deleta);
-	Sdir_term3 = 0.5*(tau-Sdir_tau0)*(tau-Sdir_tau0)/(Sdir_Deltau*Sdir_Deltau);
-	//Sdir_term2 = 0.0;
-	//Sdir_term3 = 0.0;
-	Sdir_H = exp( - Sdir_term1 - Sdir_term2 - Sdir_term3 ) / (M_PI * Sdir_Deltau);
-	//Sdir_H = exp( - Sdir_term1 - Sdir_term2 - Sdir_term3 );
-	Sdir_ch_Y_m_eta = cosh(Sdir_Y - eta);
-	Sdir_expon = -(MT/Sdir_T)*Sdir_ch_Y_m_eta*cosh(Sdir_etaf*Sdir_rt)
-			+ (PT/Sdir_T)*sinh(Sdir_etaf*Sdir_rt)*cos_phi_m_Phi;
-	return (r * MT * Sdir_ch_Y_m_eta * Sdir_H * exp(Sdir_expon));
-	//return (1.);
-	//return((r > Sdir_R) ? 0. : 1.);
-}
-
 double SourceVariances::place_in_range(double phi, double min, double max)
 {
 	while (phi < min || phi > max)
@@ -157,7 +132,6 @@ void SourceVariances::Analyze_sourcefunction(FO_surf* FOsurf_ptr)
 		return;
 
 	*global_out_stream_ptr << "Computing all phase-space integrals..." << endl;
-	double current_dNd3p_00 = 249.013183, thermal_dNd3p_00 = 249.013183, previous_dNd3p_00 = 249.013183;
 	BIGsw.tic();
 	// ************************************************************
 	// Compute feeddown with heaviest resonances first
@@ -171,9 +145,6 @@ void SourceVariances::Analyze_sourcefunction(FO_surf* FOsurf_ptr)
 			break;
 		else if (!Do_this_decay_channel(idc))
 			continue;
-
-//if (decay_channels[idc-1].resonance_particle_id == 12)	//omega
-//	break;
 
 		// ************************************************************
 		// if so, set decay channel info
@@ -190,17 +161,7 @@ void SourceVariances::Analyze_sourcefunction(FO_surf* FOsurf_ptr)
 			if (!Do_this_daughter_particle(idc, idc_DI, &daughter_resonance_particle_id))
 				continue;
 			Set_current_daughter_info(idc, idc_DI);
-			if (daughter_resonance_particle_id == target_particle_id)
-				previous_dNd3p_00 = current_dNd3p_00;
 			Do_resonance_integrals(current_resonance_particle_id, daughter_resonance_particle_id, idc);
-			if (daughter_resonance_particle_id == target_particle_id)
-			{
-				current_dNd3p_00 = dN_dypTdpTdphi_moments[daughter_resonance_particle_id][0][0][0];
-				*global_out_stream_ptr << all_particles[daughter_resonance_particle_id].name << " from " << all_particles[current_resonance_particle_id].name
-										<< " in decay channel " << current_decay_channel_string << ": "
-										<< current_dNd3p_00 << "   " << current_dNd3p_00-thermal_dNd3p_00 << "   " << current_dNd3p_00-previous_dNd3p_00 << endl;
-			}
-
 		}
 		Delete_decay_channel_info();				// free up memory
 	}											// END of decay channel loop
@@ -620,12 +581,12 @@ void SourceVariances::Set_dN_dypTdpTdphi_moments(FO_surf* FOsurf_ptr, int local_
 			SPinterp_pz[ipt][i] = mT*local_sinh;
 		}
 	}
-	Cal_dN_dypTdpTdphi_with_weights_polar(FOsurf_ptr, local_pid);
+	Cal_dN_dypTdpTdphi_with_weights(FOsurf_ptr, local_pid);
 
 	return;
 }
 
-void SourceVariances::Cal_dN_dypTdpTdphi_with_weights_polar(FO_surf* FOsurf_ptr, int local_pid)
+void SourceVariances::Cal_dN_dypTdpTdphi_with_weights(FO_surf* FOsurf_ptr, int local_pid)
 {
 	double * local_temp_moments = new double [n_weighting_functions];
 	double *** temp_moments_array = new double ** [n_interp_pT_pts];
@@ -712,12 +673,12 @@ void SourceVariances::Cal_dN_dypTdpTdphi_with_weights_polar(FO_surf* FOsurf_ptr,
 				{
 					double p0 = p0_pTslice[ieta];
 					double pz = pz_pTslice[ieta];
-					double expon, f0;
+					double f0;
 
 					//now get distribution function, emission function, etc.
 					if (TRUNCATE_COOPER_FRYE)
 					{
-						expon = (gammaT*(p0*1. - px*vx - py*vy) - mu)*one_by_Tdec;
+						double expon = (gammaT*(p0*1. - px*vx - py*vy) - mu)*one_by_Tdec;
 						if (expon > 20.) continue;
 						f0 = 1./(exp(expon)+sign);	//thermal equilibrium distributions
 					}
@@ -736,7 +697,10 @@ void SourceVariances::Cal_dN_dypTdpTdphi_with_weights_polar(FO_surf* FOsurf_ptr,
 
 					//ignore points where delta f is large or emission function goes negative from pdsigma
 					if ((1. + deltaf < 0.0) || (flagneg == 1 && S_p < tol))
+					{
 						S_p = 0.0;
+						continue;
+					}
 
 					double S_p_withweight = S_p*tau*eta_s_weight[ieta];
 					local_temp_moments[0] += eta_even_factor*S_p_withweight;					//<1>
@@ -773,7 +737,7 @@ void SourceVariances::Cal_dN_dypTdpTdphi_with_weights_polar(FO_surf* FOsurf_ptr,
 	{
 		double temp = temp_moments_array[ipt][iphi][wfi];
 		dN_dypTdpTdphi_moments[local_pid][wfi][ipt][iphi] = temp;
-		ln_dN_dypTdpTdphi_moments[local_pid][wfi][ipt][iphi] = log(abs(temp));
+		ln_dN_dypTdpTdphi_moments[local_pid][wfi][ipt][iphi] = log(abs(temp) + 1.e-100);
 		sign_of_dN_dypTdpTdphi_moments[local_pid][wfi][ipt][iphi] = sgn(temp);
 	}
 
@@ -998,14 +962,14 @@ void SourceVariances::Load_decay_channel_info(int dc_idx, double K_T_local, doub
 		mT = sqrt(mass*mass + pT*pT);
 		double s_min_temp = (m2 + m3)*(m2 + m3);
 		double s_max_temp = (Mres - mass)*(Mres - mass);
-		gauss_quadrature(n_s_pts, 1, 0.0, 0.0, s_min_temp, s_max_temp, NEW_s_pts, NEW_s_wts);
+		gauss_quadrature(n_s_pts, 1, 0.0, 0.0, s_min_temp, s_max_temp, s_pts, s_wts);
 		Qfunc = get_Q();
 		for (int is = 0; is < n_s_pts; ++is)
 		{
-			double s_loc = NEW_s_pts[is];
+			double s_loc = s_pts[is];
 			double g_s_loc = g(s_loc);
 			VEC_g_s[is] = g_s_loc;
-			VEC_s_factor[is] = NEW_s_wts[is]*g_s_loc;
+			VEC_s_factor[is] = s_wts[is]*g_s_loc;
 			double pstar_loc = sqrt(((Mres+mass)*(Mres+mass) - s_loc)*((Mres-mass)*(Mres-mass) - s_loc))/(2.0*Mres);
 			VEC_pstar[is] = pstar_loc;
 			double Estar_loc = sqrt(mass*mass + pstar_loc*pstar_loc);

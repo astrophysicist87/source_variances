@@ -18,8 +18,8 @@
 #include <gsl/gsl_blas.h>     // gsl linear algebra stuff
 #include <gsl/gsl_multifit_nlin.h>  // gsl multidimensional fitting
 
-#include "SV_readindata.h"
-#include "SV_parameters.h"
+#include "readindata.h"
+#include "parameters.h"
 #include "Arsenal.h"
 #include "gauss_quadrature.h"
 
@@ -165,8 +165,8 @@ class SourceVariances
 		double * eta_s, * ch_eta_s, * sh_eta_s, * eta_s_weight;
 
 		//points and weights for resonance integrals
-		double * zeta_pts, * v_pts, ** s_pts, * NEW_s_pts;
-		double * zeta_wts, * v_wts, ** s_wts, * NEW_s_wts;
+		double * zeta_pts, * v_pts, * s_pts;
+		double * zeta_wts, * v_wts, * s_wts;
 
 		//some arrays to save unnecessary multiple calculations for resonances
 		//use these for n_body = 2
@@ -250,7 +250,7 @@ class SourceVariances
 
 		void Set_dN_dypTdpTdphi_moments(FO_surf* FOsurf_ptr, int dc_idx);
 		void Cal_dN_dypTdpTdphi(double** SP_p0, double** SP_px, double** SP_py, double** SP_pz, FO_surf* FOsurf_ptr);
-		void Cal_dN_dypTdpTdphi_with_weights_polar(FO_surf* FOsurf_ptr, int local_pid);
+		void Cal_dN_dypTdpTdphi_with_weights(FO_surf* FOsurf_ptr, int local_pid);
 		double Cal_dN_dypTdpTdphi_function(FO_surf* FOsurf_ptr, int local_pid, double pT, double pphi);
 		//double Emissionfunction(double p0, double px, double py, double pz, FO_surf* surf);
 		void Do_resonance_integrals(int iKT, int iKphi, int dc_idx);
@@ -288,8 +288,6 @@ class SourceVariances
 		double get_Q();
 		double g(double s);
 		inline void set_to_zero(double * array, size_t arraylength);
-		void adaptive_simpson_integration(void (SourceVariances::*f) (double, double *), double a, double b, double * results);
-		double S_direct(double r, double eta, double tau, double MT, double PT, double cos_phi_m_Phi);
 		double place_in_range(double phi, double min, double max);
 		void Get_current_decay_string(int dc_idx, string * decay_string);
 		int lookup_resonance_idx_from_particle_id(int particle_id);

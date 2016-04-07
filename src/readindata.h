@@ -1,7 +1,7 @@
-#ifndef SV_READINDATA_H
-#define SV_READINDATA_H
+#ifndef READINDATA_H
+#define READINDATA_H
 
-#include "SV_parameters.h"
+#include "parameters.h"
 //#include "../src/sorter.h"
 #include "sorter.h"
 #include<fstream>

@@ -1,5 +1,5 @@
-#ifndef SV_PARAMETERS_H
-#define SV_PARAMETERS_H
+#ifndef PARAMETERS_H
+#define PARAMETERS_H
 
 #include<string>
 #include<sstream>
@@ -38,9 +38,9 @@ const double eta_s_i = 0.0;
 const double eta_s_f = 4.0;
 
 //relative momentum information
-const int qnpts = 51;
-const double delta_q = 0.02;
-const double init_q = 0.;
+//const int qnpts = 51;
+//const double delta_q = 0.02;
+//const double init_q = 0.;
 
 //single particle spectra info
 const int n_SP_pT = 15;
@@ -64,9 +64,9 @@ const int corrfuncdim = 1;
 const bool lambdaflag = true;
 
 //pair momentum info
-const int n_localp_T = 14;
-const double localp_T_min = 0.05;
-const double localp_T_max = 0.7;
+const int n_localp_T = 16;
+const double localp_T_min = 0.01;
+const double localp_T_max = 1.01;
 const int n_localp_phi = 51;
 const double localp_phi_min = 0.0;
 const double localp_phi_max = 2*M_PI;

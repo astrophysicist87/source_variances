@@ -30,14 +30,12 @@ double SourceVariances::get_Q()
 	
 	for (int is = 0; is < n_s_pts; ++is)
 	{
-		//double sp = s_pts[dc_idx-1][is];
-		double sp = NEW_s_pts[is];
+		double sp = s_pts[is];
 		double f1 = (Mres+mass)*(Mres+mass) - sp;
 		double f2 = smax - sp;
 		double f3 = smin - sp;
 		double f4 = (m2-m3)*(m2-m3) - sp;
-		//sum += s_wts[dc_idx-1][is]*sqrt(f1*f2*f3*f4)/(sp+1.e-15);
-		sum += NEW_s_wts[is]*sqrt(f1*f2*f3*f4)/(sp+1.e-15);
+		sum += s_wts[is]*sqrt(f1*f2*f3*f4)/(sp+1.e-15);
 	}
 
 	return sum;
@@ -179,13 +177,6 @@ void SourceVariances::Do_resonance_integrals(int parent_resonance_particle_id, i
 	res_log_info = ln_dN_dypTdpTdphi_moments[parent_resonance_particle_id];
 	res_moments_info = dN_dypTdpTdphi_moments[parent_resonance_particle_id];
 
-	//if (parent_resonance_particle_id == 75)
-	//	current_level_of_output = 1;
-	//else
-	//	current_level_of_output = 0;
-	//
-	//if (current_level_of_output > 0) cout << all_particles[parent_resonance_particle_id].name << " to " << all_particles[daughter_particle_id].name << " (decay #): ";
-
 	n_body = current_reso_nbody;
 
 	if (n_body == 2)
@@ -195,10 +186,6 @@ void SourceVariances::Do_resonance_integrals(int parent_resonance_particle_id, i
 		{
 			double local_pT = SPinterp_pT[ipt];
 			double local_pphi = SPinterp_pphi[ipphi];
-if (ipt == 0 && ipphi == 0)
-	current_level_of_output = 1;
-else
-	current_level_of_output = 0;
 			set_to_zero(ssum_vec, n_weighting_functions);
 			set_to_zero(vsum_vec, n_weighting_functions);
 			set_to_zero(zetasum_vec, n_weighting_functions);
@@ -248,7 +235,7 @@ else
 			{
 				dN_dypTdpTdphi_moments[daughter_particle_id][iweight][ipt][ipphi] += ssum_vec[iweight];
 				double temp = dN_dypTdpTdphi_moments[daughter_particle_id][iweight][ipt][ipphi];
-				ln_dN_dypTdpTdphi_moments[daughter_particle_id][iweight][ipt][ipphi] = log(abs(temp));
+				ln_dN_dypTdpTdphi_moments[daughter_particle_id][iweight][ipt][ipphi] = log(abs(temp) + 1.e-100);
 				sign_of_dN_dypTdpTdphi_moments[daughter_particle_id][iweight][ipt][ipphi] = sgn(temp);
 			}
 	
@@ -329,7 +316,7 @@ else
 			{
 				dN_dypTdpTdphi_moments[daughter_particle_id][iweight][ipt][ipphi] += ssum_vec[iweight];
 				double temp = dN_dypTdpTdphi_moments[daughter_particle_id][iweight][ipt][ipphi];
-				ln_dN_dypTdpTdphi_moments[daughter_particle_id][iweight][ipt][ipphi] = log(abs(temp));
+				ln_dN_dypTdpTdphi_moments[daughter_particle_id][iweight][ipt][ipphi] = log(abs(temp) + 1.e-100);
 				sign_of_dN_dypTdpTdphi_moments[daughter_particle_id][iweight][ipt][ipphi] = sgn(temp);
 			}
 	

@@ -1,5 +1,5 @@
-#ifndef SV_GENERATE_PROCESSING_RECORD_H
-#define SV_GENERATE_PROCESSING_RECORD_H
+#ifndef GENERATE_PROCESSING_RECORD_H
+#define GENERATE_PROCESSING_RECORD_H
 
 #include <string>
 #include <sstream>
@@ -8,7 +8,7 @@
 using namespace std;
 
 #include "plumberglib.h"
-#include "SV_parameters.h"
+#include "parameters.h"
 
 void initialize_PRfile(string currentworkingdirectory, string PRfilename = "Processing_record.txt")
 {
@@ -29,10 +29,10 @@ void initialize_PRfile(string currentworkingdirectory, string PRfilename = "Proc
 	output << "      --> eta_s_i: " << eta_s_i << endl;
 	output << "      --> eta_s_f: " << eta_s_f << endl;
 
-	output << "   - Relative momentum information:" << endl;
-	output << "      --> qnpts: " << qnpts << endl;
-	output << "      --> delta_q: " << delta_q << endl;
-	output << "      --> init_q: " << init_q << endl;
+	//output << "   - Relative momentum information:" << endl;
+	//output << "      --> qnpts: " << qnpts << endl;
+	//output << "      --> delta_q: " << delta_q << endl;
+	//output << "      --> init_q: " << init_q << endl;
 
 	output << "   - Correlation function information:" << endl;
 	output << "      --> corrfuncdim: " << corrfuncdim << endl;
