@@ -174,8 +174,6 @@ void SourceVariances::Analyze_sourcefunction(FO_surf* FOsurf_ptr)
 	Set_source_variances_grid();
 
 	//compute HBT radii on grid
-	//double * tmp_R2side = new double [n_interp_pT_pts];
-	//double * tmp_R2out = new double [n_interp_pT_pts];
 	for(int ipt = 0; ipt < n_interp_pT_pts; ++ipt)
 	{
 		double m_perp = sqrt(SPinterp_pT[ipt]*SPinterp_pT[ipt] + particle_mass*particle_mass);
@@ -190,8 +188,6 @@ void SourceVariances::Analyze_sourcefunction(FO_surf* FOsurf_ptr)
 			Calculate_R2_sidelong(ipt, ipphi);
 			Calculate_R2_outlong(ipt, ipphi);
 		}
-//tmp_R2side[ipt] = R2_side_grid[ipt][0];
-//tmp_R2out[ipt] = R2_out_grid[ipt][0];
 	}
 
 	//then interpolate to desired pair-momentum values and Fourier transform
@@ -199,9 +195,6 @@ void SourceVariances::Analyze_sourcefunction(FO_surf* FOsurf_ptr)
 	{
 		if (abs(K_T[iKT]) < 1.e-10)
 			continue;
-//cout << K_T[iKT] << "   "
-//	<< interpolate1D(SPinterp_pT, tmp_R2side, K_T[iKT], n_interp_pT_pts, 1, UNIFORM_SPACING, false) << "   "
-//	<< interpolate1D(SPinterp_pT, tmp_R2out, K_T[iKT], n_interp_pT_pts, 1, UNIFORM_SPACING, false) << endl;
 
 		for(int iKphi = 0; iKphi < n_localp_phi; ++iKphi)
 		{
@@ -663,9 +656,6 @@ void SourceVariances::Cal_dN_dypTdpTdphi_with_weights(FO_surf* FOsurf_ptr, int l
 				FO_surf*surf = &FOsurf_ptr[isurf];
 
 				double tau = surf->tau;
-				double r = surf->r;
-				double sin_temp_phi = surf->sin_phi;
-				double cos_temp_phi = surf->cos_phi;
 
 				double vx = surf->vx;
 				double vy = surf->vy;
@@ -683,8 +673,8 @@ void SourceVariances::Cal_dN_dypTdpTdphi_with_weights(FO_surf* FOsurf_ptr, int l
 				double pi22 = surf->pi22;
 				double pi33 = surf->pi33;
 
-				double z1 = r * (cos_temp_phi * cos_pphi + sin_temp_phi * sin_pphi);
-				double z2 = r * (sin_temp_phi * cos_pphi - cos_temp_phi * sin_pphi);
+				double x = surf->xpt;
+				double y = surf->ypt;
 
 				for(int ieta=0; ieta < eta_s_npts; ++ieta)
 				{
@@ -723,22 +713,22 @@ void SourceVariances::Cal_dN_dypTdpTdphi_with_weights(FO_surf* FOsurf_ptr, int l
 					local_temp_moments[0] += eta_even_factor*S_p_withweight;					//<1>
 					if (INCLUDE_SOURCE_VARIANCES)
 					{
-						double z0 = tau*ch_eta_s[ieta];
-						double z3 = tau*sh_eta_s[ieta];
-						local_temp_moments[1] += eta_even_factor*S_p_withweight*z2;				//<x_s>
-						local_temp_moments[2] += eta_even_factor*S_p_withweight*z2*z2;			//<x^2_s>
-						local_temp_moments[3] += eta_even_factor*S_p_withweight*z1;				//<x_o>
-						local_temp_moments[4] += eta_even_factor*S_p_withweight*z1*z1;			//<x^2_o>
-						local_temp_moments[5] += eta_odd_factor*S_p_withweight*z3;				//<x_l>
-						local_temp_moments[6] += eta_even_factor*S_p_withweight*z3*z3;			//<x^2_l>
-						local_temp_moments[7] += eta_even_factor*S_p_withweight*z0;				//<t>
-						local_temp_moments[8] += eta_even_factor*S_p_withweight*z0*z0;			//<t^2>
-						local_temp_moments[9] += eta_even_factor*S_p_withweight*z2*z1;			//<x_s x_o>
-						local_temp_moments[10] += eta_odd_factor*S_p_withweight*z2*z3;			//<x_s x_l>
-						local_temp_moments[11] += eta_even_factor*S_p_withweight*z2*z0;			//<x_s t>
-						local_temp_moments[12] += eta_odd_factor*S_p_withweight*z1*z3;			//<x_o x_l>
-						local_temp_moments[13] += eta_even_factor*S_p_withweight*z1*z0;			//<x_o t>
-						local_temp_moments[14] += eta_odd_factor*S_p_withweight*z3*z0;			//<x_l t>
+						double t = tau*ch_eta_s[ieta];
+						double z = tau*sh_eta_s[ieta];
+						local_temp_moments[1] += eta_even_factor*S_p_withweight*x;
+						local_temp_moments[2] += eta_even_factor*S_p_withweight*x*x;
+						local_temp_moments[3] += eta_even_factor*S_p_withweight*y;
+						local_temp_moments[4] += eta_even_factor*S_p_withweight*y*y;
+						local_temp_moments[5] += eta_odd_factor*S_p_withweight*z;
+						local_temp_moments[6] += eta_even_factor*S_p_withweight*z*z;
+						local_temp_moments[7] += eta_even_factor*S_p_withweight*t;
+						local_temp_moments[8] += eta_even_factor*S_p_withweight*t*t;
+						local_temp_moments[9] += eta_even_factor*S_p_withweight*x*y;
+						local_temp_moments[10] += eta_odd_factor*S_p_withweight*x*z;
+						local_temp_moments[11] += eta_even_factor*S_p_withweight*x*t;
+						local_temp_moments[12] += eta_odd_factor*S_p_withweight*y*z;
+						local_temp_moments[13] += eta_even_factor*S_p_withweight*y*t;
+						local_temp_moments[14] += eta_odd_factor*S_p_withweight*z*t;
 					}
 				}
 			}
@@ -952,25 +942,25 @@ void SourceVariances::Load_decay_channel_info(int dc_idx, double K_T_local, doub
 				double temp_sin_PPhi_tilde_loc = sqrt(1. - temp_cos_PPhi_tilde_loc*temp_cos_PPhi_tilde_loc);
 				double PPhi_tilde_loc = place_in_range( atan2(temp_sin_PPhi_tilde_loc, temp_cos_PPhi_tilde_loc), interp_pphi_min, interp_pphi_max);
 				//shouldn't have Kphi here if working in osl coordinates!!!
-				//VEC_n2_PPhi_tilde[iv][izeta] = place_in_range( K_phi_local + PPhi_tilde_loc, interp_pphi_min, interp_pphi_max);
-				//VEC_n2_PPhi_tildeFLIP[iv][izeta] = place_in_range( K_phi_local - PPhi_tilde_loc, interp_pphi_min, interp_pphi_max);
-				VEC_n2_PPhi_tilde[iv][izeta] = place_in_range( PPhi_tilde_loc, interp_pphi_min, interp_pphi_max);
-				VEC_n2_PPhi_tildeFLIP[iv][izeta] = place_in_range( - PPhi_tilde_loc, interp_pphi_min, interp_pphi_max);
+				VEC_n2_PPhi_tilde[iv][izeta] = place_in_range( K_phi_local + PPhi_tilde_loc, interp_pphi_min, interp_pphi_max);
+				VEC_n2_PPhi_tildeFLIP[iv][izeta] = place_in_range( K_phi_local - PPhi_tilde_loc, interp_pphi_min, interp_pphi_max);
+				//VEC_n2_PPhi_tilde[iv][izeta] = place_in_range( PPhi_tilde_loc, interp_pphi_min, interp_pphi_max);
+				//VEC_n2_PPhi_tildeFLIP[iv][izeta] = place_in_range( - PPhi_tilde_loc, interp_pphi_min, interp_pphi_max);
 				VEC_n2_PT[iv][izeta] = PT_loc;
 				check_for_NaNs("PT_loc", PT_loc, *global_out_stream_ptr);
 				check_for_NaNs("PPhi_tilde_loc", PPhi_tilde_loc, *global_out_stream_ptr);
 				//probably not the most elegant set-up, but does the job for now...
 				VEC_n2_Pp[iv][izeta][0] = MT_loc * cosh(P_Y_loc);
-				//VEC_n2_Pp[iv][izeta][1] = PT_loc * cos(K_phi_local + PPhi_tilde_loc);		//shouldn't have Kphi here if working in osl coordinates!!!
-				//VEC_n2_Pp[iv][izeta][2] = PT_loc * sin(K_phi_local + PPhi_tilde_loc);		//shouldn't have Kphi here if working in osl coordinates!!!
-				VEC_n2_Pp[iv][izeta][1] = PT_loc * cos(PPhi_tilde_loc);
-				VEC_n2_Pp[iv][izeta][2] = PT_loc * sin(PPhi_tilde_loc);
+				VEC_n2_Pp[iv][izeta][1] = PT_loc * cos(K_phi_local + PPhi_tilde_loc);		//shouldn't have Kphi here if working in osl coordinates!!!
+				VEC_n2_Pp[iv][izeta][2] = PT_loc * sin(K_phi_local + PPhi_tilde_loc);		//shouldn't have Kphi here if working in osl coordinates!!!
+				//VEC_n2_Pp[iv][izeta][1] = PT_loc * cos(PPhi_tilde_loc);
+				//VEC_n2_Pp[iv][izeta][2] = PT_loc * sin(PPhi_tilde_loc);
 				VEC_n2_Pp[iv][izeta][3] = MT_loc * sinh(P_Y_loc);
 				VEC_n2_Pm[iv][izeta][0] = VEC_n2_Pp[iv][izeta][0];
-				//VEC_n2_Pm[iv][izeta][1] = PT_loc * cos(K_phi_local - PPhi_tilde_loc);		//shouldn't have Kphi here if working in osl coordinates!!!
-				//VEC_n2_Pm[iv][izeta][2] = PT_loc * sin(K_phi_local - PPhi_tilde_loc);		//shouldn't have Kphi here if working in osl coordinates!!!
-				VEC_n2_Pm[iv][izeta][1] = PT_loc * cos( - PPhi_tilde_loc);
-				VEC_n2_Pm[iv][izeta][2] = PT_loc * sin( - PPhi_tilde_loc);
+				VEC_n2_Pm[iv][izeta][1] = PT_loc * cos(K_phi_local - PPhi_tilde_loc);		//shouldn't have Kphi here if working in osl coordinates!!!
+				VEC_n2_Pm[iv][izeta][2] = PT_loc * sin(K_phi_local - PPhi_tilde_loc);		//shouldn't have Kphi here if working in osl coordinates!!!
+				//VEC_n2_Pm[iv][izeta][1] = PT_loc * cos( - PPhi_tilde_loc);
+				//VEC_n2_Pm[iv][izeta][2] = PT_loc * sin( - PPhi_tilde_loc);
 				VEC_n2_Pm[iv][izeta][3] = VEC_n2_Pp[iv][izeta][3];
 				for (int ii=0; ii<4; ++ii)
 				{
@@ -1030,22 +1020,22 @@ void SourceVariances::Load_decay_channel_info(int dc_idx, double K_T_local, doub
 					double temp_sin_PPhi_tilde_loc = sqrt(1. - temp_cos_PPhi_tilde_loc*temp_cos_PPhi_tilde_loc);
 					double PPhi_tilde_loc = place_in_range( atan2(temp_sin_PPhi_tilde_loc, temp_cos_PPhi_tilde_loc), interp_pphi_min, interp_pphi_max);
 					//shouldn't have Kphi here if working in osl coordinates!!!
-					//VEC_PPhi_tilde[is][iv][izeta] = place_in_range( K_phi_local + PPhi_tilde_loc, interp_pphi_min, interp_pphi_max);
-					//VEC_PPhi_tildeFLIP[is][iv][izeta] = place_in_range( K_phi_local - PPhi_tilde_loc, interp_pphi_min, interp_pphi_max);
-					VEC_PPhi_tilde[is][iv][izeta] = place_in_range( PPhi_tilde_loc, interp_pphi_min, interp_pphi_max);
-					VEC_PPhi_tildeFLIP[is][iv][izeta] = place_in_range( - PPhi_tilde_loc, interp_pphi_min, interp_pphi_max);
+					VEC_PPhi_tilde[is][iv][izeta] = place_in_range( K_phi_local + PPhi_tilde_loc, interp_pphi_min, interp_pphi_max);
+					VEC_PPhi_tildeFLIP[is][iv][izeta] = place_in_range( K_phi_local - PPhi_tilde_loc, interp_pphi_min, interp_pphi_max);
+					//VEC_PPhi_tilde[is][iv][izeta] = place_in_range( PPhi_tilde_loc, interp_pphi_min, interp_pphi_max);
+					//VEC_PPhi_tildeFLIP[is][iv][izeta] = place_in_range( - PPhi_tilde_loc, interp_pphi_min, interp_pphi_max);
 					VEC_PT[is][iv][izeta] = PT_loc;
 					VEC_Pp[is][iv][izeta][0] = MT_loc * cosh(P_Y_loc);
-					//VEC_Pp[is][iv][izeta][1] = PT_loc * cos(K_phi_local + PPhi_tilde_loc);	//shouldn't have Kphi here if working in osl coordinates!!!
-					//VEC_Pp[is][iv][izeta][2] = PT_loc * sin(K_phi_local + PPhi_tilde_loc);	//shouldn't have Kphi here if working in osl coordinates!!!
-					VEC_Pp[is][iv][izeta][1] = PT_loc * cos(PPhi_tilde_loc);
-					VEC_Pp[is][iv][izeta][2] = PT_loc * sin(PPhi_tilde_loc);
+					VEC_Pp[is][iv][izeta][1] = PT_loc * cos(K_phi_local + PPhi_tilde_loc);	//shouldn't have Kphi here if working in osl coordinates!!!
+					VEC_Pp[is][iv][izeta][2] = PT_loc * sin(K_phi_local + PPhi_tilde_loc);	//shouldn't have Kphi here if working in osl coordinates!!!
+					//VEC_Pp[is][iv][izeta][1] = PT_loc * cos(PPhi_tilde_loc);
+					//VEC_Pp[is][iv][izeta][2] = PT_loc * sin(PPhi_tilde_loc);
 					VEC_Pp[is][iv][izeta][3] = MT_loc * sinh(P_Y_loc);
 					VEC_Pm[is][iv][izeta][0] = VEC_Pp[is][iv][izeta][0];
-					//VEC_Pm[is][iv][izeta][1] = PT_loc * cos(K_phi_local - PPhi_tilde_loc);	//shouldn't have Kphi here if working in osl coordinates!!!
-					//VEC_Pm[is][iv][izeta][2] = PT_loc * sin(K_phi_local - PPhi_tilde_loc);	//shouldn't have Kphi here if working in osl coordinates!!!
-					VEC_Pm[is][iv][izeta][1] = PT_loc * cos( - PPhi_tilde_loc);
-					VEC_Pm[is][iv][izeta][2] = PT_loc * sin( - PPhi_tilde_loc);
+					VEC_Pm[is][iv][izeta][1] = PT_loc * cos(K_phi_local - PPhi_tilde_loc);	//shouldn't have Kphi here if working in osl coordinates!!!
+					VEC_Pm[is][iv][izeta][2] = PT_loc * sin(K_phi_local - PPhi_tilde_loc);	//shouldn't have Kphi here if working in osl coordinates!!!
+					//VEC_Pm[is][iv][izeta][1] = PT_loc * cos( - PPhi_tilde_loc);
+					//VEC_Pm[is][iv][izeta][2] = PT_loc * sin( - PPhi_tilde_loc);
 					VEC_Pm[is][iv][izeta][3] = VEC_Pp[is][iv][izeta][3];
 					for (int ii=0; ii<4; ++ii)
 					{
@@ -1159,7 +1149,7 @@ void SourceVariances::Set_source_variances_grid()
 		S_func[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][0][ipt][ipphi];
 		if (INCLUDE_SOURCE_VARIANCES)
 		{
-			xs_S[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][1][ipt][ipphi];
+			/*xs_S[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][1][ipt][ipphi];
 			xs2_S[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][2][ipt][ipphi];
 			xo_S[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][3][ipt][ipphi];
 			xo2_S[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][4][ipt][ipphi];
@@ -1172,7 +1162,36 @@ void SourceVariances::Set_source_variances_grid()
 			xs_t_S[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][11][ipt][ipphi];
 			xo_xl_S[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][12][ipt][ipphi];
 			xo_t_S[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][13][ipt][ipphi];
-			xl_t_S[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][14][ipt][ipphi];
+			xl_t_S[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][14][ipt][ipphi];*/
+
+			x_S[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][1][ipt][ipphi];
+                        x2_S[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][2][ipt][ipphi];
+                        y_S[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][3][ipt][ipphi];
+                        y2_S[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][4][ipt][ipphi];
+                        z_S[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][5][ipt][ipphi];
+                        z2_S[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][6][ipt][ipphi];
+                        t_S[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][7][ipt][ipphi];
+                        t2_S[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][8][ipt][ipphi];
+                        xy_S[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][9][ipt][ipphi];
+                        xz_S[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][10][ipt][ipphi];
+                        xt_S[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][11][ipt][ipphi];
+                        yz_S[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][12][ipt][ipphi];
+                        yt_S[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][13][ipt][ipphi];
+                        zt_S[ipt][ipphi] = dN_dypTdpTdphi_moments[target_particle_id][14][ipt][ipphi];
+
+			double cp = cos(SPinterp_pphi[ipphi]), sp = sin(SPinterp_pphi[ipphi]);
+			xs_S[ipt][ipphi] = -sp*x_S[ipt][ipphi] + cp*y_S[ipt][ipphi];
+                        xs2_S[ipt][ipphi] = sp*sp*x2_S[ipt][ipphi] - 2.*sp*cp*xy_S[ipt][ipphi] + cp*cp*y2_S[ipt][ipphi];
+                        xo_S[ipt][ipphi] = cp*x_S[ipt][ipphi] + sp*y_S[ipt][ipphi];
+                        xo2_S[ipt][ipphi] = cp*cp*x2_S[ipt][ipphi] + 2.*sp*cp*xy_S[ipt][ipphi] + sp*sp*y2_S[ipt][ipphi];
+                        xl_S[ipt][ipphi] = z_S[ipt][ipphi];
+                        xl2_S[ipt][ipphi] = z2_S[ipt][ipphi];
+                        xo_xs_S[ipt][ipphi] = xy_S[ipt][ipphi]*(cp*cp-sp*sp) + (y2_S[ipt][ipphi] - x2_S[ipt][ipphi])*sp*cp;
+                        xl_xs_S[ipt][ipphi] = -xz_S[ipt][ipphi] * sp + yz_S[ipt][ipphi] * cp;
+                        xs_t_S[ipt][ipphi] = -xt_S[ipt][ipphi] * sp + yt_S[ipt][ipphi] * cp;
+                        xo_xl_S[ipt][ipphi] = xz_S[ipt][ipphi] * cp + yz_S[ipt][ipphi] * sp;
+                        xo_t_S[ipt][ipphi] = xt_S[ipt][ipphi] * cp + yt_S[ipt][ipphi] * sp;
+                        xl_t_S[ipt][ipphi] = zt_S[ipt][ipphi];
 		}
 	}
 	return;

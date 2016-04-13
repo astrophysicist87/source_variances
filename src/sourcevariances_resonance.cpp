@@ -71,45 +71,45 @@ void SourceVariances::get_rapidity_dependence(double * rap_indep_vector, double 
 		double ch_rap_val = cosh(rap_val);
 		double sh_rap_val = sinh(rap_val);
 	
-		//[{xs}_r]_{r-->\pi}
-		rap_dep_vector[1] = rap_indep_vector[1];								//xs
-		//[{xs2}_r]_{r-->\pi}
-		rap_dep_vector[2] = rap_indep_vector[2];								//xs2
-		//[{xo}_r]_{r-->\pi}
-		rap_dep_vector[3] = rap_indep_vector[3];								//xo
-		//[{xo2}_r]_{r-->\pi}
-		rap_dep_vector[4] = rap_indep_vector[4];								//xo2
-		//[{xl}_r]_{r-->\pi}
-		rap_dep_vector[5] = ch_rap_val * rap_indep_vector[5]					//xl
-					+ sh_rap_val * rap_indep_vector[7];							//t
-		//[{xl2}_r]_{r-->\pi}
-		rap_dep_vector[6] = ch_rap_val * ch_rap_val * rap_indep_vector[6]		//xl2
-					+ 2. * ch_rap_val * sh_rap_val * rap_indep_vector[14]		//xlt
-					+ sh_rap_val * sh_rap_val * rap_indep_vector[8];			//t2
+		//[{x}_r]_{r-->\pi}
+		rap_dep_vector[1] = rap_indep_vector[1];
+		//[{x2}_r]_{r-->\pi}
+		rap_dep_vector[2] = rap_indep_vector[2];
+		//[{y}_r]_{r-->\pi}
+		rap_dep_vector[3] = rap_indep_vector[3];
+		//[{y2}_r]_{r-->\pi}
+		rap_dep_vector[4] = rap_indep_vector[4];
+		//[{z}_r]_{r-->\pi}
+		rap_dep_vector[5] = ch_rap_val * rap_indep_vector[5]
+					+ sh_rap_val * rap_indep_vector[7];
+		//[{z2}_r]_{r-->\pi}
+		rap_dep_vector[6] = ch_rap_val * ch_rap_val * rap_indep_vector[6]
+					+ 2. * ch_rap_val * sh_rap_val * rap_indep_vector[14]
+					+ sh_rap_val * sh_rap_val * rap_indep_vector[8];
 		//[{t}_r]_{r-->\pi}
-		rap_dep_vector[7] = ch_rap_val * rap_indep_vector[7]					//t
-					+ sh_rap_val * rap_indep_vector[5];							//xl
+		rap_dep_vector[7] = ch_rap_val * rap_indep_vector[7]
+					+ sh_rap_val * rap_indep_vector[5];
 		//[{t2}_r]_{r-->\pi}
-		rap_dep_vector[8] = ch_rap_val * ch_rap_val * rap_indep_vector[8]		//t2
-					+ 2. * ch_rap_val * sh_rap_val * rap_indep_vector[14]		//xlt
-					+ sh_rap_val * sh_rap_val * rap_indep_vector[6];			//xl2
-		//[{xs_xo}_r]_{r-->\pi}
-		rap_dep_vector[9] = rap_indep_vector[9];								//xsxo	
-		//[{xs_xl}_r]_{r-->\pi}
-		rap_dep_vector[10] = ch_rap_val * rap_indep_vector[10]					//xsxl
-					+ sh_rap_val * rap_indep_vector[11];						//xst
-		//[{xs_t}_r]_{r-->\pi}
-		rap_dep_vector[11] = ch_rap_val * rap_indep_vector[11]					//xst
-					+ sh_rap_val * rap_indep_vector[10];						//xsxl
-		//[{xo_xl}_r]_{r-->\pi}
-		rap_dep_vector[12] = ch_rap_val * rap_indep_vector[12]					//xoxl					
-					+ sh_rap_val * rap_indep_vector[13];						//xot
-		//[{xo_t}_r]_{r-->\pi}
-		rap_dep_vector[13] = ch_rap_val * rap_indep_vector[13]					//xot
-					+ sh_rap_val * rap_indep_vector[12];						//xoxl
-		//[{xl_t}_r]_{r-->\pi}
-		rap_dep_vector[14] = (ch_rap_val * ch_rap_val + sh_rap_val * sh_rap_val) * rap_indep_vector[14]		//xlt
-					+ sh_rap_val * ch_rap_val * (rap_indep_vector[6] + rap_indep_vector[8]);	//t2
+		rap_dep_vector[8] = ch_rap_val * ch_rap_val * rap_indep_vector[8]
+					+ 2. * ch_rap_val * sh_rap_val * rap_indep_vector[14]
+					+ sh_rap_val * sh_rap_val * rap_indep_vector[6];
+		//[{xy}_r]_{r-->\pi}
+		rap_dep_vector[9] = rap_indep_vector[9];
+		//[{xz}_r]_{r-->\pi}
+		rap_dep_vector[10] = ch_rap_val * rap_indep_vector[10]
+					+ sh_rap_val * rap_indep_vector[11];
+		//[{xt}_r]_{r-->\pi}
+		rap_dep_vector[11] = ch_rap_val * rap_indep_vector[11]
+					+ sh_rap_val * rap_indep_vector[10];
+		//[{yz}_r]_{r-->\pi}
+		rap_dep_vector[12] = ch_rap_val * rap_indep_vector[12]
+					+ sh_rap_val * rap_indep_vector[13];
+		//[{yt}_r]_{r-->\pi}
+		rap_dep_vector[13] = ch_rap_val * rap_indep_vector[13]
+					+ sh_rap_val * rap_indep_vector[12];
+		//[{zt}_r]_{r-->\pi}
+		rap_dep_vector[14] = (ch_rap_val * ch_rap_val + sh_rap_val * sh_rap_val) * rap_indep_vector[14]
+					+ sh_rap_val * ch_rap_val * (rap_indep_vector[6] + rap_indep_vector[8]);
 	}
 	
 	return;
@@ -117,39 +117,40 @@ void SourceVariances::get_rapidity_dependence(double * rap_indep_vector, double 
 
 void SourceVariances::combine_sourcevariances(double * output, double * input, double * alpha_vec)
 {
-	//0, 1, 2, 3 --> t, o, s, l
+	//0, 1, 2, 3 --> t, x, y, z
 	//[{1}_r]_{r-->\pi}
 	output[0] += input[0];
 	if (INCLUDE_SOURCE_VARIANCES)
 	{
-		//[{xs}_r]_{r-->\pi}
-		output[1] += input[1] + alpha_vec[2]*input[0];
-		//[{xs2}_r]_{r-->\pi}
-		output[2] += input[2] + 2.*alpha_vec[2]*input[1] + 2.*alpha_vec[2]*alpha_vec[2]*input[0];
-		//[{xo}_r]_{r-->\pi}
-		output[3] += input[3] + alpha_vec[1]*input[0];
-		//[{xo2}_r]_{r-->\pi}
-		output[4] += input[4] + 2.*alpha_vec[1]*input[3] + 2.*alpha_vec[1]*alpha_vec[1]*input[0];
-		//[{xl}_r]_{r-->\pi}
-		output[5] += input[5] + alpha_vec[3]*input[0];
-		//[{xl2}_r]_{r-->\pi}
-		output[6] += input[6] + 2.*alpha_vec[3]*input[5] + 2.*alpha_vec[3]*alpha_vec[3]*input[0];
+		double ax = alpha_vec[1], ay = alpha_vec[2], az = alpha_vec[3], at = alpha_vec[0];
+		//[{x}_r]_{r-->\pi}
+		output[1] += input[1] + ax*input[0];
+		//[{x2}_r]_{r-->\pi}
+		output[2] += input[2] + 2.*ax*input[1] + 2.*ax*ax*input[0];
+		//[{y}_r]_{r-->\pi}
+		output[3] += input[3] + ay*input[0];
+		//[{y2}_r]_{r-->\pi}
+		output[4] += input[4] + 2.*ay*input[3] + 2.*ay*ay*input[0];
+		//[{z}_r]_{r-->\pi}
+		output[5] += input[5] + az*input[0];
+		//[{z2}_r]_{r-->\pi}
+		output[6] += input[6] + 2.*az*input[5] + 2.*az*az*input[0];
 		//[{t}_r]_{r-->\pi}
-		output[7] += input[7] + alpha_vec[0]*input[0];
+		output[7] += input[7] + at*input[0];
 		//[{t2}_r]_{r-->\pi}
-		output[8] += input[8] + 2.*alpha_vec[0]*input[7] + 2.*alpha_vec[0]*alpha_vec[0]*input[0];
-		//[{xs_xo}_r]_{r-->\pi}
-		output[9] += input[9] + alpha_vec[2]*input[3] + alpha_vec[1]*input[1] + 2.*alpha_vec[2]*alpha_vec[1]*input[0];
-		//[{xs_xl}_r]_{r-->\pi}
-		output[10] += input[10] + alpha_vec[2]*input[5] + alpha_vec[3]*input[1] + 2.*alpha_vec[2]*alpha_vec[3]*input[0];
-		//[{xs_t}_r]_{r-->\pi}
-		output[11] += input[11] + alpha_vec[2]*input[7] + alpha_vec[0]*input[1] + 2.*alpha_vec[2]*alpha_vec[0]*input[0];
-		//[{xo_xl}_r]_{r-->\pi}
-		output[12] += input[12] + alpha_vec[1]*input[5] + alpha_vec[3]*input[3] + 2.*alpha_vec[1]*alpha_vec[3]*input[0];
-		//[{xo_t}_r]_{r-->\pi}
-		output[13] += input[13] + alpha_vec[1]*input[7] + alpha_vec[0]*input[3] + 2.*alpha_vec[1]*alpha_vec[0]*input[0];
-		//[{xl_t}_r]_{r-->\pi}
-		output[14] += input[14] + alpha_vec[3]*input[7] + alpha_vec[0]*input[5] + 2.*alpha_vec[3]*alpha_vec[0]*input[0];
+		output[8] += input[8] + 2.*at*input[7] + 2.*at*at*input[0];
+		//[{xy}_r]_{r-->\pi}
+		output[9] += input[9] + ax*input[3] + ay*input[1] + 2.*ax*ay*input[0];
+		//[{xz}_r]_{r-->\pi}
+		output[10] += input[10] + ax*input[5] + az*input[1] + 2.*ax*az*input[0];
+		//[{xt}_r]_{r-->\pi}
+		output[11] += input[11] + ax*input[7] + at*input[1] + 2.*ax*at*input[0];
+		//[{yz}_r]_{r-->\pi}
+		output[12] += input[12] + ay*input[5] + az*input[3] + 2.*ay*az*input[0];
+		//[{yt}_r]_{r-->\pi}
+		output[13] += input[13] + ay*input[7] + at*input[3] + 2.*ay*at*input[0];
+		//[{zt}_r]_{r-->\pi}
+		output[14] += input[14] + az*input[7] + at*input[5] + 2.*az*at*input[0];
 	}
 	
 	return;

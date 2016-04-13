@@ -206,12 +206,17 @@ class SourceVariances
 		double * Correl_1D_long;
 		double * Correl_1D_long_err;
 
-		//source variances
+		//source variances - osl
 		double **S_func;
 		double **xs_S, **xo_S, **xl_S, **t_S;
 		double **xs2_S, **xo2_S, **xl2_S, **t2_S;
 		double **xo_xs_S, **xl_xs_S, **xs_t_S, **xo_xl_S, **xo_t_S, **xl_t_S;
 		
+		//source variances - xyz
+		double ** x_S, ** y_S, ** z_S;
+		double ** x2_S, ** y2_S, ** z2_S;
+		double ** xy_S, ** xz_S, ** xt_S, ** yz_S, ** yt_S, ** zt_S;
+
 		//HBT radii coefficients
 		double **R2_side, **R2_out, **R2_long, **R2_outside, **R2_sidelong, **R2_outlong;
 		double **R2_side_grid, **R2_out_grid, **R2_long_grid, **R2_outside_grid, **R2_sidelong_grid, **R2_outlong_grid;

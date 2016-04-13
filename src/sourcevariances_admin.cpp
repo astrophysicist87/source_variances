@@ -24,7 +24,7 @@
 using namespace std;
 
 const double PTCHANGE = 1.0;
-const bool USE_PTCHANGE = false;
+const bool USE_PTCHANGE = true;
 
 template <typename T> int sgn(T val)
 {
@@ -385,6 +385,21 @@ SourceVariances::SourceVariances(particle_info* particle, particle_info* all_par
 	xo_t_S = new double* [n_interp_pT_pts];
 	xl_t_S = new double* [n_interp_pT_pts];
 
+        x_S = new double* [n_interp_pT_pts];
+        x2_S = new double* [n_interp_pT_pts];
+        y_S = new double* [n_interp_pT_pts];
+        y2_S = new double* [n_interp_pT_pts];
+        z_S = new double* [n_interp_pT_pts];
+        z2_S = new double* [n_interp_pT_pts];
+        t_S = new double* [n_interp_pT_pts];
+        t2_S = new double* [n_interp_pT_pts];
+        xy_S = new double* [n_interp_pT_pts];
+        xz_S = new double* [n_interp_pT_pts];
+        xt_S = new double* [n_interp_pT_pts];
+        yz_S = new double* [n_interp_pT_pts];
+        yt_S = new double* [n_interp_pT_pts];
+        zt_S = new double* [n_interp_pT_pts];
+
 	R2_side_grid = new double * [n_interp_pT_pts];
 	R2_out_grid = new double* [n_interp_pT_pts];
 	R2_outside_grid = new double* [n_interp_pT_pts];
@@ -428,6 +443,21 @@ SourceVariances::SourceVariances(particle_info* particle, particle_info* all_par
 		xo_xl_S[i] = new double [n_interp_pphi_pts];
 		xo_t_S[i] = new double [n_interp_pphi_pts];
 		xl_t_S[i] = new double [n_interp_pphi_pts];
+
+                x_S[i] = new double [n_interp_pphi_pts];
+                x2_S[i] = new double [n_interp_pphi_pts];
+                y_S[i] = new double [n_interp_pphi_pts];
+                y2_S[i] = new double [n_interp_pphi_pts];
+                z_S[i] = new double [n_interp_pphi_pts];
+                z2_S[i] = new double [n_interp_pphi_pts];
+                t_S[i] = new double [n_interp_pphi_pts];
+                t2_S[i] = new double [n_interp_pphi_pts];
+                xy_S[i] = new double [n_interp_pphi_pts];
+                xz_S[i] = new double [n_interp_pphi_pts];
+                xt_S[i] = new double [n_interp_pphi_pts];
+                yz_S[i] = new double [n_interp_pphi_pts];
+                yt_S[i] = new double [n_interp_pphi_pts];
+                zt_S[i] = new double [n_interp_pphi_pts];
 	
 		R2_side_grid[i] = new double [n_interp_pphi_pts];
 		R2_out_grid[i] = new double [n_interp_pphi_pts];
@@ -479,6 +509,21 @@ SourceVariances::SourceVariances(particle_info* particle, particle_info* all_par
 			xo_xl_S[i][j] = 0.;
 			xo_t_S[i][j] = 0.;
 			xl_t_S[i][j] = 0.;
+
+		        x_S[i][j] = 0.;
+                        x2_S[i][j] = 0.;
+                        y_S[i][j] = 0.;
+                        y2_S[i][j] = 0.;
+                        z_S[i][j] = 0.;
+                        z2_S[i][j] = 0.;
+                        t_S[i][j] = 0.;
+                        t2_S[i][j] = 0.;
+                        xy_S[i][j] = 0.;
+                        xz_S[i][j] = 0.;
+                        xt_S[i][j] = 0.;
+                        yz_S[i][j] = 0.;
+                        yt_S[i][j] = 0.;
+                        zt_S[i][j] = 0.;
 
 			R2_side_grid[i][j] = 0.;
 			R2_out_grid[i][j] = 0.;
@@ -566,6 +611,21 @@ for(int i=0; i<n_interp_pT_pts; i++)
 		xo_xl_S[i][j] = 0.;
 		xo_t_S[i][j] = 0.;
 		xl_t_S[i][j] = 0.;
+
+                x_S[i][j] = 0.;
+                x2_S[i][j] = 0.;
+                y_S[i][j] = 0.;
+                y2_S[i][j] = 0.;
+                z_S[i][j] = 0.;
+                z2_S[i][j] = 0.;
+                t_S[i][j] = 0.;
+                t2_S[i][j] = 0.;
+                xy_S[i][j] = 0.;
+                xz_S[i][j] = 0.;
+                xt_S[i][j] = 0.;
+                yz_S[i][j] = 0.;
+                yt_S[i][j] = 0.;
+                zt_S[i][j] = 0.;
 
 		R2_side_grid[i][j] = 0.;
 		R2_out_grid[i][j] = 0.;
