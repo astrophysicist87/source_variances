@@ -65,17 +65,18 @@ void SourceVariances::Output_results(int folderindex)
 				<< "  " << R2_side[iKT][iKphi] << "  " << R2_out[iKT][iKphi]
 				<< "  " << R2_outside[iKT][iKphi] << "  " << R2_long[iKT][iKphi]
 				<< "  " << R2_sidelong[iKT][iKphi] << "  " << R2_outlong[iKT][iKphi] << endl;
-	         	//output_Svars << scientific << setprecision(8) << setw(15) 
-	         	output_Svars << setprecision(8) << setw(15) 
-				<< K_T[iKT] << "   " << K_phi[iKphi] << "   " << S_func[iKT][iKphi] << "   "
-				<< xs_S[iKT][iKphi] << "   " << xo_S[iKT][iKphi] << "   " << xl_S[iKT][iKphi] << "   "
-				<< t_S[iKT][iKphi]  << "   " << xs_t_S[iKT][iKphi] << "   "
-				<< xo_t_S[iKT][iKphi] << "   " << xl_t_S[iKT][iKphi] << "   "
-				<< xo_xs_S[iKT][iKphi] << "   " << xl_xs_S[iKT][iKphi] << "   "
-				<< xo_xl_S[iKT][iKphi] << "   " << xs2_S[iKT][iKphi] << "   " << xo2_S[iKT][iKphi] << "   "
-				<< xl2_S[iKT][iKphi] << "   " << t2_S[iKT][iKphi] << endl;
 		}
 	}
+	for(int ipt = 0; ipt < n_interp_pT_pts; ipt++)
+	for(int ipphi = 0; ipphi < n_interp_pphi_pts; ipphi++)
+		output_Svars << setprecision(8) << setw(15) 
+			<< SPinterp_pT[ipt] << "   " << SPinterp_pphi[ipphi] << "   " << S_func[ipt][ipphi] << "   "
+			<< xs_S[ipt][ipphi] << "   " << xo_S[ipt][ipphi] << "   " << xl_S[ipt][ipphi] << "   "
+			<< t_S[ipt][ipphi]  << "   " << xs_t_S[ipt][ipphi] << "   "
+			<< xo_t_S[ipt][ipphi] << "   " << xl_t_S[ipt][ipphi] << "   "
+			<< xo_xs_S[ipt][ipphi] << "   " << xl_xs_S[ipt][ipphi] << "   "
+			<< xo_xl_S[ipt][ipphi] << "   " << xs2_S[ipt][ipphi] << "   " << xo2_S[ipt][ipphi] << "   "
+			<< xl2_S[ipt][ipphi] << "   " << t2_S[ipt][ipphi] << endl;
 
 	outputHBT.close();
 	output_Svars.close();
@@ -85,7 +86,7 @@ void SourceVariances::Output_results(int folderindex)
 
 void SourceVariances::Readin_results(int folderindex)
 {
-double dummy;
+	double dummy;
 	ostringstream filename_stream_HBT;
 	filename_stream_HBT << global_path << "/HBTradii_ev" << folderindex << no_df_stem << ".dat";
 	ifstream inputHBT(filename_stream_HBT.str().c_str());
@@ -93,41 +94,42 @@ double dummy;
 	filename_stream_S << global_path << "/Sourcefunction_variances" << no_df_stem << ".dat";
 	ifstream input_Svars(filename_stream_S.str().c_str());
 
-for(int iKT = 0; iKT < n_localp_T; iKT++)
-{
-	for(int iKphi = 0; iKphi < n_localp_phi; iKphi++)
+	for(int iKT = 0; iKT < n_localp_T; iKT++)
 	{
-		inputHBT >> dummy;
-		inputHBT >> dummy;
-        	inputHBT >> dummy;
-		inputHBT >> R2_side[iKT][iKphi];
-		inputHBT >> R2_out[iKT][iKphi];
-		inputHBT >> R2_outside[iKT][iKphi];
-		inputHBT >> R2_long[iKT][iKphi];
-		inputHBT >> R2_sidelong[iKT][iKphi];
-		inputHBT >> R2_outlong[iKT][iKphi];
+		for(int iKphi = 0; iKphi < n_localp_phi; iKphi++)
+		{
+			inputHBT >> dummy;
+			inputHBT >> dummy;
+			inputHBT >> dummy;
+			inputHBT >> R2_side[iKT][iKphi];
+			inputHBT >> R2_out[iKT][iKphi];
+			inputHBT >> R2_outside[iKT][iKphi];
+			inputHBT >> R2_long[iKT][iKphi];
+			inputHBT >> R2_sidelong[iKT][iKphi];
+			inputHBT >> R2_outlong[iKT][iKphi];
+		}
 	}
-	for(int iKphi = 0; iKphi < n_localp_phi; iKphi++)
+	for(int ipt = 0; ipt < n_interp_pT_pts; ipt++)
+	for(int ipphi = 0; ipphi < n_interp_pphi_pts; ipphi++)
 	{
          	input_Svars >> dummy;
         	input_Svars >> dummy;
-        	input_Svars >> S_func[iKT][iKphi];
-        	input_Svars >> xs_S[iKT][iKphi];
-        	input_Svars >> xo_S[iKT][iKphi];
-        	input_Svars >> xl_S[iKT][iKphi];
-        	input_Svars >> t_S[iKT][iKphi];
-        	input_Svars >> xs_t_S[iKT][iKphi];
-        	input_Svars >> xo_t_S[iKT][iKphi];
-        	input_Svars >> xl_t_S[iKT][iKphi];
-        	input_Svars >> xo_xs_S[iKT][iKphi];
-        	input_Svars >> xl_xs_S[iKT][iKphi];
-        	input_Svars >> xo_xl_S[iKT][iKphi];
-        	input_Svars >> xs2_S[iKT][iKphi];
-        	input_Svars >> xo2_S[iKT][iKphi];
-        	input_Svars >> xl2_S[iKT][iKphi];
-        	input_Svars >> t2_S[iKT][iKphi];
+        	input_Svars >> S_func[ipt][ipphi];
+        	input_Svars >> xs_S[ipt][ipphi];
+        	input_Svars >> xo_S[ipt][ipphi];
+        	input_Svars >> xl_S[ipt][ipphi];
+        	input_Svars >> t_S[ipt][ipphi];
+        	input_Svars >> xs_t_S[ipt][ipphi];
+        	input_Svars >> xo_t_S[ipt][ipphi];
+        	input_Svars >> xl_t_S[ipt][ipphi];
+        	input_Svars >> xo_xs_S[ipt][ipphi];
+        	input_Svars >> xl_xs_S[ipt][ipphi];
+        	input_Svars >> xo_xl_S[ipt][ipphi];
+        	input_Svars >> xs2_S[ipt][ipphi];
+        	input_Svars >> xo2_S[ipt][ipphi];
+        	input_Svars >> xl2_S[ipt][ipphi];
+        	input_Svars >> t2_S[ipt][ipphi];
 	}
-}
 
 	inputHBT.close();
 	input_Svars.close();

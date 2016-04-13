@@ -24,6 +24,7 @@
 using namespace std;
 
 const double PTCHANGE = 1.0;
+const bool USE_PTCHANGE = false;
 
 template <typename T> int sgn(T val)
 {
@@ -345,6 +346,8 @@ SourceVariances::SourceVariances(particle_info* particle, particle_info* all_par
 	K_T = new double [n_localp_T];
 	double dK_T = (localp_T_max - localp_T_min)/(n_localp_T - 1 + 1e-100);
 	for(int i=0; i<n_localp_T; i++) K_T[i] = localp_T_min + i*dK_T;
+
+//gauss_quadrature(n_localp_T, 5, 0.0, 0.0, 0.0, 13.0, K_T, dummywts3);	//use this one to agree with iS.e
 	//K_y = p_y;
 	K_y = 0.;
 	ch_K_y = cosh(K_y);
@@ -366,21 +369,28 @@ SourceVariances::SourceVariances(particle_info* particle, particle_info* all_par
 		sh_eta_s[ieta] = sinh(eta_s[ieta]);
 	}
 
-	S_func = new double* [n_localp_T];
-	xs_S = new double* [n_localp_T];
-	xs2_S = new double* [n_localp_T];
-	xo_S = new double* [n_localp_T];
-	xo2_S = new double* [n_localp_T];
-	xl_S = new double* [n_localp_T];
-	xl2_S = new double* [n_localp_T];
-	t_S = new double* [n_localp_T];
-	t2_S = new double* [n_localp_T];
-	xo_xs_S = new double* [n_localp_T];
-	xl_xs_S = new double* [n_localp_T];
-	xs_t_S = new double* [n_localp_T];
-	xo_xl_S = new double* [n_localp_T];
-	xo_t_S = new double* [n_localp_T];
-	xl_t_S = new double* [n_localp_T];
+	S_func = new double* [n_interp_pT_pts];
+	xs_S = new double* [n_interp_pT_pts];
+	xs2_S = new double* [n_interp_pT_pts];
+	xo_S = new double* [n_interp_pT_pts];
+	xo2_S = new double* [n_interp_pT_pts];
+	xl_S = new double* [n_interp_pT_pts];
+	xl2_S = new double* [n_interp_pT_pts];
+	t_S = new double* [n_interp_pT_pts];
+	t2_S = new double* [n_interp_pT_pts];
+	xo_xs_S = new double* [n_interp_pT_pts];
+	xl_xs_S = new double* [n_interp_pT_pts];
+	xs_t_S = new double* [n_interp_pT_pts];
+	xo_xl_S = new double* [n_interp_pT_pts];
+	xo_t_S = new double* [n_interp_pT_pts];
+	xl_t_S = new double* [n_interp_pT_pts];
+
+	R2_side_grid = new double * [n_interp_pT_pts];
+	R2_out_grid = new double* [n_interp_pT_pts];
+	R2_outside_grid = new double* [n_interp_pT_pts];
+	R2_long_grid = new double* [n_interp_pT_pts];
+	R2_sidelong_grid = new double* [n_interp_pT_pts];
+	R2_outlong_grid = new double* [n_interp_pT_pts];
 
 	R2_side = new double* [n_localp_T];
 	R2_side_C = new double* [n_localp_T];
@@ -401,24 +411,34 @@ SourceVariances::SourceVariances(particle_info* particle, particle_info* all_par
 	R2_outlong_C = new double* [n_localp_T];
 	R2_outlong_S = new double* [n_localp_T];
 
+	for(int i=0; i<n_interp_pT_pts; i++)
+	{
+		S_func[i] = new double [n_interp_pphi_pts];
+		xs_S[i] = new double [n_interp_pphi_pts];
+		xs2_S[i] = new double [n_interp_pphi_pts];
+		xo_S[i] = new double [n_interp_pphi_pts];
+		xo2_S[i] = new double [n_interp_pphi_pts];
+		xl_S[i] = new double [n_interp_pphi_pts];
+		xl2_S[i] = new double [n_interp_pphi_pts];
+		t_S[i] = new double [n_interp_pphi_pts];
+		t2_S[i] = new double [n_interp_pphi_pts];
+		xo_xs_S[i] = new double [n_interp_pphi_pts];
+		xl_xs_S[i] = new double [n_interp_pphi_pts];
+		xs_t_S[i] = new double [n_interp_pphi_pts];
+		xo_xl_S[i] = new double [n_interp_pphi_pts];
+		xo_t_S[i] = new double [n_interp_pphi_pts];
+		xl_t_S[i] = new double [n_interp_pphi_pts];
+	
+		R2_side_grid[i] = new double [n_interp_pphi_pts];
+		R2_out_grid[i] = new double [n_interp_pphi_pts];
+		R2_outside_grid[i] = new double [n_interp_pphi_pts];
+		R2_long_grid[i] = new double [n_interp_pphi_pts];
+		R2_sidelong_grid[i] = new double [n_interp_pphi_pts];
+		R2_outlong_grid[i] = new double [n_interp_pphi_pts];
+	}
+
 	for(int i=0; i<n_localp_T; i++)
 	{
-		S_func[i] = new double [n_localp_phi];
-		xs_S[i] = new double [n_localp_phi];
-		xs2_S[i] = new double [n_localp_phi];
-		xo_S[i] = new double [n_localp_phi];
-		xo2_S[i] = new double [n_localp_phi];
-		xl_S[i] = new double [n_localp_phi];
-		xl2_S[i] = new double [n_localp_phi];
-		t_S[i] = new double [n_localp_phi];
-		t2_S[i] = new double [n_localp_phi];
-		xo_xs_S[i] = new double [n_localp_phi];
-		xl_xs_S[i] = new double [n_localp_phi];
-		xs_t_S[i] = new double [n_localp_phi];
-		xo_xl_S[i] = new double [n_localp_phi];
-		xo_t_S[i] = new double [n_localp_phi];
-		xl_t_S[i] = new double [n_localp_phi];
-		
 		R2_side[i] = new double [n_localp_phi];
 		R2_side_C[i] = new double [n_order];
 		R2_side_S[i] = new double [n_order];
@@ -440,9 +460,9 @@ SourceVariances::SourceVariances(particle_info* particle, particle_info* all_par
 	}
 
 	//initialize all source variances and HBT radii/coeffs
-	for(int i=0; i<n_localp_T; i++)
+	for(int i=0; i<n_interp_pT_pts; i++)
 	{
-		for(int j=0; j<n_localp_phi; j++)
+		for(int j=0; j<n_interp_pphi_pts; j++)
 		{
 			S_func[i][j] = 0.;
 			xs_S[i][j] = 0.;
@@ -459,7 +479,19 @@ SourceVariances::SourceVariances(particle_info* particle, particle_info* all_par
 			xo_xl_S[i][j] = 0.;
 			xo_t_S[i][j] = 0.;
 			xl_t_S[i][j] = 0.;
-			
+
+			R2_side_grid[i][j] = 0.;
+			R2_out_grid[i][j] = 0.;
+			R2_long_grid[i][j] = 0.;
+			R2_outside_grid[i][j] = 0.;
+			R2_sidelong_grid[i][j] = 0.;
+			R2_outlong_grid[i][j] = 0.;
+		}
+	}
+	for(int i=0; i<n_localp_T; i++)
+	{
+		for(int j=0; j<n_localp_phi; j++)
+		{
 			R2_side[i][j] = 0.;
 			R2_out[i][j] = 0.;
 			R2_long[i][j] = 0.;
@@ -483,6 +515,7 @@ SourceVariances::SourceVariances(particle_info* particle, particle_info* all_par
 			R2_outlong_S[i][j] = 0.;
 		}
 	}
+
 
    return;
 }
@@ -514,9 +547,9 @@ void SourceVariances::Update_sourcefunction(particle_info* particle, int FOarray
    FO_length = FOarray_length;
 
 //reset only EBE source variances and EBE HBT radii/coeffs
-for(int i=0; i<n_localp_T; i++)
+for(int i=0; i<n_interp_pT_pts; i++)
 {
-	for(int j=0; j<n_localp_phi; j++)
+	for(int j=0; j<n_interp_pphi_pts; j++)
 	{
 		S_func[i][j] = 0.;
 		xs_S[i][j] = 0.;
@@ -533,7 +566,19 @@ for(int i=0; i<n_localp_T; i++)
 		xo_xl_S[i][j] = 0.;
 		xo_t_S[i][j] = 0.;
 		xl_t_S[i][j] = 0.;
-		
+
+		R2_side_grid[i][j] = 0.;
+		R2_out_grid[i][j] = 0.;
+		R2_long_grid[i][j] = 0.;
+		R2_outside_grid[i][j] = 0.;
+		R2_sidelong_grid[i][j] = 0.;
+		R2_outlong_grid[i][j] = 0.;
+	}
+}
+for(int i=0; i<n_localp_T; i++)
+{
+	for(int j=0; j<n_localp_phi; j++)
+	{
 		R2_side[i][j] = 0.;
 		R2_out[i][j] = 0.;
 		R2_long[i][j] = 0.;
@@ -557,6 +602,7 @@ for(int i=0; i<n_localp_T; i++)
 		R2_outlong_S[i][j] = 0.;
 	}
 }
+
 
    return;
 }
@@ -596,7 +642,7 @@ SourceVariances::~SourceVariances()
 
    delete[] R2_side;
 
-   for(int i=0; i<n_localp_T; i++)
+   for(int i=0; i<n_interp_pT_pts; i++)
    {
       delete[] S_func[i];
       delete[] xs_S[i];
@@ -933,7 +979,7 @@ double SourceVariances::Edndp3(const double ptr, const double phir, const int pn
 {
 	double phi0, phi1;
 	double f1, f2, val;
-	int PTCHANGE = 1.0;
+	//int PTCHANGE = 1.0;
 
 	int npphi_max = n_interp_pphi_pts - 1;
 	int npT_max = n_interp_pT_pts - 1;
@@ -978,7 +1024,7 @@ double SourceVariances::Edndp3(const double ptr, const double phir, const int pn
 	double one_by_pTdiff = 1./(pT1 - pT0), one_by_pphidiff = 1./(phi1 - phi0);
 
 	// interpolate over pT values first
-	if(ptr > PTCHANGE)				// if pT interpolation point is larger than PTCHANGE (currently 1.0 GeV)
+	if(ptr > PTCHANGE && USE_PTCHANGE)				// if pT interpolation point is larger than PTCHANGE (currently 1.0 GeV)
 	{
 		double sign_of_f11 = sign_of_dN_dypTdpTdphi_moments[pn][wfi][npt-1][nphim1];
 		double sign_of_f12 = sign_of_dN_dypTdpTdphi_moments[pn][wfi][npt-1][nphi];
@@ -986,12 +1032,12 @@ double SourceVariances::Edndp3(const double ptr, const double phir, const int pn
 		double sign_of_f22 = sign_of_dN_dypTdpTdphi_moments[pn][wfi][npt][nphi];
 
 		// set f1 first
+		double logf11 = ln_dN_dypTdpTdphi_moments[pn][wfi][npt-1][nphim1];
+		double logf21 = ln_dN_dypTdpTdphi_moments[pn][wfi][npt][nphim1];
+		if ( ptr > pT1 && ( logf21 > logf11 || sign_of_f11 * sign_of_f21 < 0 ) )
+			f1 = 0.0;
 		if (sign_of_f11 * sign_of_f21 > 0)	// if the two points have the same sign in the pT direction, interpolate logs
-		{
-			double logf11 = ln_dN_dypTdpTdphi_moments[pn][wfi][npt-1][nphim1];
-			double logf21 = ln_dN_dypTdpTdphi_moments[pn][wfi][npt][nphim1];
 			f1 = sign_of_f11 * exp( lin_int(pT0, one_by_pTdiff, logf11, logf21, ptr) );
-		}
 		else					// otherwise, just interpolate original vals
 		{
 			double f11 = dN_dypTdpTdphi_moments[pn][wfi][npt-1][nphim1];
@@ -1000,12 +1046,12 @@ double SourceVariances::Edndp3(const double ptr, const double phir, const int pn
 		}
 
 		// set f2 next
+		double logf12 = ln_dN_dypTdpTdphi_moments[pn][wfi][npt-1][nphi];
+		double logf22 = ln_dN_dypTdpTdphi_moments[pn][wfi][npt][nphi];
+		if ( ptr > pT1 && ( logf22 > logf12 || sign_of_f12 * sign_of_f22 < 0 ) )
+			f1 = 0.0;
 		if (sign_of_f12 * sign_of_f22 > 0)	// if the two points have the same sign in the pT direction, interpolate logs
-		{
-			double logf12 = ln_dN_dypTdpTdphi_moments[pn][wfi][npt-1][nphi];
-			double logf22 = ln_dN_dypTdpTdphi_moments[pn][wfi][npt][nphi];
 			f2 = sign_of_f12 * exp( lin_int(pT0, one_by_pTdiff, logf12, logf22, ptr) );
-		}
 		else					// otherwise, just interpolate original vals
 		{
 			double f12 = dN_dypTdpTdphi_moments[pn][wfi][npt-1][nphi];
@@ -1026,8 +1072,8 @@ double SourceVariances::Edndp3(const double ptr, const double phir, const int pn
 	// now, interpolate f1 and f2 over the pphi direction
 	val = lin_int(phi0, one_by_pphidiff, f1, f2, phir);
 
-	if (isnan(val) || abs(val) > 0.5*(abs(f1)+abs(f2))*1.e5)
-	{
+	//if (isnan(val) || abs(val) > 0.5*(abs(f1)+abs(f2))*1.e5)
+	//{
 		*global_out_stream_ptr << "ERROR: problems encountered!" << endl
 			<< "val = " << setw(8) << setprecision(15) << val << endl
 			<< "  --> wfi = " << wfi << endl
@@ -1043,8 +1089,8 @@ double SourceVariances::Edndp3(const double ptr, const double phir, const int pn
 			<< "  --> f22 = " << dN_dypTdpTdphi_moments[pn][wfi][npt][nphi] << endl
 			<< "  --> f1 = " << f1 << endl
 			<< "  --> f2 = " << f2 << endl;
-		exit(1);
-	}
+		//exit(1);
+	//}
 
 	return val;
 }
@@ -1105,7 +1151,7 @@ void SourceVariances::Edndp3(double ptr, double phir, double * results)
 		double ** temp_res_moments_info = res_moments_info[wfi];
 		
 		// interpolate over pT values first
-		if(ptr > PTCHANGE)				// if pT interpolation point is larger than PTCHANGE (currently 1.0 GeV)
+		if(ptr > PTCHANGE && USE_PTCHANGE)				// if pT interpolation point is larger than PTCHANGE (currently 1.0 GeV)
 		{
 			double sign_of_f11 = temp_res_sign_info[npt-1][nphim1];
 			double sign_of_f12 = temp_res_sign_info[npt-1][nphi];
@@ -1116,7 +1162,7 @@ void SourceVariances::Edndp3(double ptr, double phir, double * results)
 			// set f1 first
 			//*******************************************************************************************************************
 			// if using extrapolation and spectra at pT1 has larger magnitude than at pT0, just return zero
-			if (ptr > pT1 && temp_res_log_info[npt][nphim1] > temp_res_log_info[npt-1][nphim1])
+			if (ptr > pT1 && ( temp_res_log_info[npt][nphim1] > temp_res_log_info[npt-1][nphim1] || sign_of_f11 * sign_of_f21 < 0 ) )
 				f1 = 0.0;
 			else if (sign_of_f11 * sign_of_f21 > 0)	// if the two points have the same sign in the pT direction, interpolate logs
 				f1 = sign_of_f11 * exp( lin_int2(ptr-pT0, one_by_pTdiff, temp_res_log_info[npt-1][nphim1], temp_res_log_info[npt][nphim1]) );
@@ -1126,7 +1172,7 @@ void SourceVariances::Edndp3(double ptr, double phir, double * results)
 			//*******************************************************************************************************************
 			// set f2 next
 			//*******************************************************************************************************************
-			if (ptr > pT1 && temp_res_log_info[npt][nphi] > temp_res_log_info[npt-1][nphi])
+			if (ptr > pT1 && ( temp_res_log_info[npt][nphi] > temp_res_log_info[npt-1][nphi] || sign_of_f12 * sign_of_f22 < 0 ) )
 				f2 = 0.0;
 			else if (sign_of_f12 * sign_of_f22 > 0)	// if the two points have the same sign in the pT direction, interpolate logs
 				f2 = sign_of_f12 * exp( lin_int2(ptr-pT0, one_by_pTdiff, temp_res_log_info[npt-1][nphi], temp_res_log_info[npt][nphi]) );

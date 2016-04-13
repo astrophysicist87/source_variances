@@ -21,7 +21,7 @@ using namespace std;
 #define SPACETIME_MOMENTS_ONLY		false		// duh
 #define CHECK_FOR_LIFETIME		false		// true means skip particles which are too long-lived
 #define DO_ALL_DECAY_CHANNELS		true		// duh
-#define INCLUDE_SOURCE_VARIANCES	false		// false means do spectra only
+#define INCLUDE_SOURCE_VARIANCES	true		// false means do spectra only
 
 const double hbarC=0.197327053;  //GeV*fm
 const double twopi = 2.*M_PI;
@@ -33,48 +33,39 @@ const int Maxdecaychannel=13;
 const int Maxdecaypart=5;
 
 //spatial rapidity information
-const int eta_s_npts = 15;
+const int eta_s_npts = 25;
 const double eta_s_i = 0.0;
 const double eta_s_f = 4.0;
 
-//relative momentum information
-//const int qnpts = 51;
-//const double delta_q = 0.02;
-//const double init_q = 0.;
-
 //single particle spectra info
-const int n_SP_pT = 15;
+const int n_SP_pT = 25;
 const int n_SP_pphi = 48;
 const double SP_pT_min = 0.0;
 const double SP_pT_max = 3.0;
 
 //parameters for interpolation grid
 //  - polar
-const int n_interp_pT_pts = 15;
+const int n_interp_pT_pts = 25;
 const int n_interp_pphi_pts = 48;
-const double interp_pT_min = 0.01;
+const double interp_pT_min = 0.0;
 const double interp_pphi_min = 0.0;
-const double interp_pT_max = 4.05;
+const double interp_pT_max = 4.0;
 const double interp_pphi_max = 2.*M_PI;
 const double Del2_pT = (interp_pT_max - interp_pT_min) / (double)(n_interp_pT_pts-1);
 const double Del2_pphi = (interp_pphi_max - interp_pphi_min) / (double)(n_interp_pphi_pts-1);
 
-//correlation function info
-const int corrfuncdim = 1;
-const bool lambdaflag = true;
-
 //pair momentum info
-const int n_localp_T = 16;
+const int n_localp_T = 101;
 const double localp_T_min = 0.01;
 const double localp_T_max = 1.01;
-const int n_localp_phi = 51;
+const int n_localp_phi = 48;
 const double localp_phi_min = 0.0;
 const double localp_phi_max = 2*M_PI;
 
 const int n_order = 1;
 
 const double tol = 0.0;		//tolerance
-const int flagneg = 0;		//neglect all points that are negative
+const int flagneg = 1;		//neglect all points that are negative
 				//choose flagneg == 0 to agree with iS.e
 				//choose flagneg == 1 for the real world
 //misc. resonance info

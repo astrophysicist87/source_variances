@@ -184,6 +184,7 @@ void SourceVariances::Do_resonance_integrals(int parent_resonance_particle_id, i
 		for (int ipt = 0; ipt < n_interp_pT_pts; ++ipt)
 		for (int ipphi = 0; ipphi < n_interp_pphi_pts; ++ipphi)
 		{
+//cerr << "Entering " << n_body << "   " << ipt << "   " << ipphi << endl;
 			double local_pT = SPinterp_pT[ipt];
 			double local_pphi = SPinterp_pphi[ipphi];
 			set_to_zero(ssum_vec, n_weighting_functions);
@@ -218,6 +219,14 @@ void SourceVariances::Do_resonance_integrals(int parent_resonance_particle_id, i
 							alphavec = VEC_n2_alpha_m[iv][izeta];
 						}
 						Edndp3(PKT, PKphi, rap_indep_y_of_r);
+/*for (int iweight = 0; iweight < n_weighting_functions; ++iweight)
+{
+	double tmp = Cal_wfi_dN_dypTdpTdphi_function(current_FOsurf_ptr, parent_resonance_particle_id, PKT, PKphi, iweight);
+	cout << iweight << "   " << PKT << "   " << PKY << "   " << PKphi << "   "
+		<< rap_indep_y_of_r[iweight] << "   "
+		<< tmp << endl;
+	rap_indep_y_of_r[iweight] = tmp;
+}*/
 						get_rapidity_dependence(rap_indep_y_of_r, y_of_r, PKY);
 						combine_sourcevariances(Csum_vec, y_of_r, alphavec);
 					}																					// end of tempidx sum
@@ -266,6 +275,7 @@ void SourceVariances::Do_resonance_integrals(int parent_resonance_particle_id, i
 		for (int ipt = 0; ipt < n_interp_pT_pts; ++ipt)
 		for (int ipphi = 0; ipphi < n_interp_pphi_pts; ++ipphi)
 		{
+//cerr << "Entering " << n_body << "   " << ipt << "   " << ipphi << endl;
 			double local_pT = SPinterp_pT[ipt];
 			double local_pphi = SPinterp_pphi[ipphi];
 			set_to_zero(ssum_vec, n_weighting_functions);
@@ -298,6 +308,14 @@ void SourceVariances::Do_resonance_integrals(int parent_resonance_particle_id, i
 								alphavec = VEC_alpha_m[is][iv][izeta];
 							}
 							Edndp3(PKT, PKphi, rap_indep_y_of_r);
+/*for (int iweight = 0; iweight < n_weighting_functions; ++iweight)
+{
+	double tmp = Cal_wfi_dN_dypTdpTdphi_function(current_FOsurf_ptr, parent_resonance_particle_id, PKT, PKphi, iweight);
+	cout << iweight << "   " << PKT << "   " << PKY << "   " << PKphi << "   "
+		<< rap_indep_y_of_r[iweight] << "   "
+		<< tmp << endl;
+	rap_indep_y_of_r[iweight] = tmp;
+}*/
 							get_rapidity_dependence(rap_indep_y_of_r, y_of_r, PKY);
 							//now compute appropriate linear combinations
 							combine_sourcevariances(Csum_vec, y_of_r, alphavec);

@@ -214,6 +214,7 @@ class SourceVariances
 		
 		//HBT radii coefficients
 		double **R2_side, **R2_out, **R2_long, **R2_outside, **R2_sidelong, **R2_outlong;
+		double **R2_side_grid, **R2_out_grid, **R2_long_grid, **R2_outside_grid, **R2_sidelong_grid, **R2_outlong_grid;
 		double **R2_side_C, **R2_side_S;
 		double **R2_out_C, **R2_out_S;
 		double **R2_long_C, **R2_long_S;
@@ -248,10 +249,27 @@ class SourceVariances
 		void Update_sourcefunction(particle_info* particle, int FOarray_length, int particle_idx);
 		bool fexists(const char *filename);
 
+		double Cal_wfi_dN_dypTdpTdphi_function(FO_surf* FOsurf_ptr, int local_pid, double pT, double pphi, int wfi);
+		double Cal_dN_dypTdpTdphi_function(FO_surf* FOsurf_ptr, int local_pid, double pT, double pphi);
+		double Cal_xs_dN_dypTdpTdphi_function(FO_surf* FOsurf_ptr, int local_pid, double pT, double pphi);
+		double Cal_xs2_dN_dypTdpTdphi_function(FO_surf* FOsurf_ptr, int local_pid, double pT, double pphi);
+		double Cal_xo_dN_dypTdpTdphi_function(FO_surf* FOsurf_ptr, int local_pid, double pT, double pphi);
+		double Cal_xo2_dN_dypTdpTdphi_function(FO_surf* FOsurf_ptr, int local_pid, double pT, double pphi);
+		double Cal_xl_dN_dypTdpTdphi_function(FO_surf* FOsurf_ptr, int local_pid, double pT, double pphi);
+		double Cal_xl2_dN_dypTdpTdphi_function(FO_surf* FOsurf_ptr, int local_pid, double pT, double pphi);
+		double Cal_t_dN_dypTdpTdphi_function(FO_surf* FOsurf_ptr, int local_pid, double pT, double pphi);
+		double Cal_t2_dN_dypTdpTdphi_function(FO_surf* FOsurf_ptr, int local_pid, double pT, double pphi);
+		double Cal_xsxo_dN_dypTdpTdphi_function(FO_surf* FOsurf_ptr, int local_pid, double pT, double pphi);
+		double Cal_xsxl_dN_dypTdpTdphi_function(FO_surf* FOsurf_ptr, int local_pid, double pT, double pphi);
+		double Cal_xst_dN_dypTdpTdphi_function(FO_surf* FOsurf_ptr, int local_pid, double pT, double pphi);
+		double Cal_xoxl_dN_dypTdpTdphi_function(FO_surf* FOsurf_ptr, int local_pid, double pT, double pphi);
+		double Cal_xot_dN_dypTdpTdphi_function(FO_surf* FOsurf_ptr, int local_pid, double pT, double pphi);
+		double Cal_xlt_dN_dypTdpTdphi_function(FO_surf* FOsurf_ptr, int local_pid, double pT, double pphi);
+
 		void Set_dN_dypTdpTdphi_moments(FO_surf* FOsurf_ptr, int dc_idx);
 		void Cal_dN_dypTdpTdphi(double** SP_p0, double** SP_px, double** SP_py, double** SP_pz, FO_surf* FOsurf_ptr);
 		void Cal_dN_dypTdpTdphi_with_weights(FO_surf* FOsurf_ptr, int local_pid);
-		double Cal_dN_dypTdpTdphi_function(FO_surf* FOsurf_ptr, int local_pid, double pT, double pphi);
+		//double Cal_dN_dypTdpTdphi_function(FO_surf* FOsurf_ptr, int local_pid, double pT, double pphi, int wfi = 0);
 		//double Emissionfunction(double p0, double px, double py, double pz, FO_surf* surf);
 		void Do_resonance_integrals(int iKT, int iKphi, int dc_idx);
 		void get_rapidity_dependence(double * rap_indep_vector, double * rap_dep_vector, double rap_val);
@@ -265,7 +283,8 @@ class SourceVariances
 		void Allocate_decay_channel_info();
 		void Load_decay_channel_info(int dc_idx, double K_T_local, double K_phi_local);
 		void Delete_decay_channel_info();
-		void Compute_source_variances(int iKT, int iKphi);
+		void Set_source_variances_grid();
+		void Interpolate_HBT_radii(int iKT, int iKphi);
 		//void test_function(FO_surf* FOsurf_ptr, int local_pid);
 
 		void Get_source_variances(int, int);

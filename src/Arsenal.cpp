@@ -16,6 +16,8 @@
 
 using namespace std;
 
+#define TINY 1.0e-25
+
 unsigned long int random_seed()
 {
   unsigned long int seed = 0;
@@ -60,6 +62,20 @@ void linspace(double * x, double a, double b, int n)
 
 	return;
 }
+
+void linspace(vector<double> & x, double a, double b)
+{
+//returns vector x of n linearly spaced points, with a and b as endpoints
+	int n = x.size();
+	double Del_x = (b-a)/(double)(n-1);
+
+	//assume x has length n already
+	for (int i = 0; i < n; i++)
+		x[i] = a + Del_x * (double)i;
+
+	return;
+}
+
 
 void stratify_npts(double a, double b, int n1, int npts, double * x)
 {
@@ -145,11 +161,11 @@ static int wt[16][16] = {
 
 
 //**********************************************************************
-long binarySearch(double * A, int length, double value, bool skip_out_of_range)
+long binarySearch(double * A, int length, double value, bool skip_out_of_range /*== true*/, bool verbose /*== false*/)
 // Return the index of the largest number less than value in the list A
 // using binary search. Index starts with 0.
 // If skip_out_of_range is set to true, then it will return -1 for those
-// samples that are out of the table range.
+// samples that are out of the table range (default is true).
 {
    //int length = A->size();
    int idx_i, idx_f, idx;
@@ -158,24 +174,32 @@ long binarySearch(double * A, int length, double value, bool skip_out_of_range)
 
    if(value > A[idx_f])
    {
+      if (verbose) cerr << "binarySearch: desired value is too large, exceeding the end of the table: value = " << value << " and A[idx_f] = " << A[idx_f] << endl;
       if (skip_out_of_range) return -1;
-      cout << "binarySearch: desired value is too large, exceeding the end of the table." << endl;
       exit(1);
    }
    if(value < A[idx_i])
    {
+      if (verbose) cerr << "binarySearch: desired value is too small, exceeding the beginning of table: value = " << value << " and A[idx_i] = " << A[idx_i] << endl;
       if (skip_out_of_range) return -1;
-      cout << "binarySearch: desired value is too small, exceeding the beginning of table." << endl;
       exit(1);
    }
    idx = (int) floor((idx_f+idx_i)/2.);
+   //if (verbose) cerr << "Start: idx = " << idx << endl;
    while((idx_f-idx_i) > 1)
    {
      if(A[idx] < value)
+     {
         idx_i = idx;
+		//if (verbose) cerr << "idx_i = " << idx_i << endl;
+     }
      else
+     {
         idx_f = idx;
+		//if (verbose) cerr << "idx_f = " << idx_f << endl;
+     }
      idx = (int) floor((idx_f+idx_i)/2.);
+	//if (verbose) cerr << "End: idx = " << idx << endl;
    }
    return(idx_i);
 }
@@ -296,6 +320,112 @@ double x1, double x2, double &ansy, double &ansy1, double &ansy2)
 	return;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void ratint(double xa[], double ya[], int n, double x, double *y, double *dy)
+{
+	int m,i,ns=1;
+	double w,t,hh,h,dd,*c,*d;
+	c = new double [n];
+	d = new double [n];
+	hh=fabs(x-xa[0]);
+	for (i=0;i<n;i++)
+	{
+		h=fabs(x-xa[i]);
+		if (h == 0.0)
+		{
+			*y=ya[i];
+			*dy=0.0;
+			return;
+		}
+		else if (h < hh)
+		{
+			ns=i+1;
+			hh=h;
+		}
+		c[i]=ya[i];
+		d[i]=ya[i]+TINY;
+	}
+	*y=ya[(ns--) - 1];
+	for (m=1;m<n;m++)
+	{
+		for (i=1;i<=n-m;i++)
+		{
+			w=c[i]-d[i-1];
+			h=xa[i+m-1]-x;
+			t=(xa[i-1]-x)*d[i-1]/h;
+			dd=t-c[i];
+			if (dd == 0.0) cerr << "Error in routine ratint" << endl;
+			dd=w/dd;
+			d[i-1]=c[i]*dd;
+			c[i-1]=t*dd;
+		}
+		*y += (*dy=(2*ns < (n-m) ? c[ns] : d[(ns--) - 1]));
+	}
+	
+	delete [] c;
+	delete [] d;
+
+	return;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+double ratint(vector<double> & xa, vector<double> & ya, double x, double *dy)
+{
+	double y = 0.0;
+	int m,i,ns=1;
+	const int n = xa.size();
+	double w,t,hh,h,dd;
+	//double *c,*d;
+	//c = new double [n];
+	//d = new double [n];
+	double c[n];
+	double d[n];
+	hh=fabs(x-xa[0]);
+	for (i=0;i<n;i++)
+	{
+		h=fabs(x-xa[i]);
+		if (h == 0.0)
+		{
+//			*y=ya[i];
+			y=ya[i];
+			*dy=0.0;
+			return(y);
+		}
+		else if (h < hh)
+		{
+			ns=i+1;
+			hh=h;
+		}
+		c[i]=ya[i];
+		d[i]=ya[i]+TINY;
+	}
+//	*y=ya[(ns--) - 1];
+	y=ya[(ns--) - 1];
+	for (m=1;m<n;m++)
+	{
+		for (i=1;i<=n-m;i++)
+		{
+			w=c[i]-d[i-1];
+			h=xa[i+m-1]-x;
+			t=(xa[i-1]-x)*d[i-1]/h;
+			dd=t-c[i];
+			if (dd == 0.0) cerr << "Error in routine ratint" << endl;
+			dd=w/dd;
+			d[i-1]=c[i]*dd;
+			c[i-1]=t*dd;
+		}
+//		*y += (*dy=(2*ns < (n-m) ? c[ns] : d[(ns--) - 1]));
+		y += (*dy=(2*ns < (n-m) ? c[ns] : d[(ns--) - 1]));
+	}
+	
+	//delete [] c;
+	//delete [] d;
+
+	return(y);
+}
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -563,6 +693,8 @@ double interpTriLinearNondirect(double * x, double * y, double * z, double *** f
 		{
 			cerr << "interpTriLinearNonDirect(): index out of range!  Aborting!" << endl
 				<< "interpTriLinearNonDirect(): x_size = " << x_size << ", x0 = " << x0 << ", xidx = " << xidx << endl;
+			cerr << "made it here" << endl;
+			long xidx2 = binarySearch(x, x_size, x0, false, true);
 			exit(1);
 		}
 		else return (default_return_value);
@@ -570,6 +702,36 @@ double interpTriLinearNondirect(double * x, double * y, double * z, double *** f
 
 	double xidxINT = interpBiLinearNondirect(y, z, f[xidx], y0, z0, y_size, z_size);
 	double xidxp1INT = interpBiLinearNondirect(y, z, f[xidx+1], y0, z0, y_size, z_size);
+
+	return xidxINT + (xidxp1INT-xidxINT)/(x[xidx+1]-x[xidx])*(x0-x[xidx]);
+}
+
+
+//**********************************************************************
+double interpQuadriLinearNondirect(double * x, double * y, double * z, double * t, double **** f, double x0, double y0, double z0, double t0,
+									long x_size, long y_size, long z_size, long t_size, bool returnflag /*= false*/, double default_return_value /* = 0*/)
+{
+	//long size = x->size();
+	if (x_size==1 && y_size==1 && z_size==1 && t_size==1) {cout<<"interpQuadriLinearNondirect warning: table size = 1"<<endl; return f[0][0][0][0];}
+
+	// assume not close to edges for now...
+	// find x's integer index
+	//long xidx = floor((x0-x[0])/dx);
+	long xidx = binarySearch(x, x_size, x0, true);
+
+	if (xidx < 0 || xidx >= x_size-1)
+	{
+		if (!returnflag)	//i.e., if returnflag is false, exit
+		{
+			cerr << "interpQuadriLinearNondirect(): index out of range!  Aborting!" << endl
+				<< "interpQuadriLinearNondirect(): x_size = " << x_size << ", x0 = " << x0 << ", xidx = " << xidx << endl;
+			exit(1);
+		}
+		else return (default_return_value);
+	}
+
+	double xidxINT = interpTriLinearNondirect(y, z, t, f[xidx], y0, z0, t0, y_size, z_size, t_size);
+	double xidxp1INT = interpTriLinearNondirect(y, z, t, f[xidx+1], y0, z0, t0, y_size, z_size, t_size);
 
 	return xidxINT + (xidxp1INT-xidxINT)/(x[xidx+1]-x[xidx])*(x0-x[xidx]);
 }
@@ -671,23 +833,31 @@ double interpCubicDirect(double * x, double * y, double x0, long size, bool retu
 
 }
 
+
+
+
+
+
+
 /////////////////////////////////////////////////////////////////////////////////////////
 //**********************************************************************
 //double interpCubicNondirect(double * x, double * y, double xx, long size)
-double interpCubicNonDirect(double * x, double * y, double x0, long size, bool returnflag /*= false*/, double default_return_value /* = 0*/)
+double interpCubicNonDirect(double * x, double * y, double xi, long size, bool returnflag /*= false*/, double default_return_value /* = 0*/)
 // Returns the interpreted value of y=y(x) at x=x0 using cubic polynomial interpolation method.
 // -- x,y: the independent and dependent double x0ables; x is *NOT* assumed to be equal spaced but it has to be increasing
-// -- x0: where the interpolation should be performed
+// -- xi: where the interpolation should be performed
 {
+//cout << "interpCubicNondirect: " << xi << "   " << size << endl;
   //long size = x->size();
   if (size==1) {cout<<"interpCubicNondirect warning: table size = 1"<<endl; return y[0];}
 
   // if close to left end:
-  if (abs(x0-x[0])<(x[1]-x[0])*1e-30) return y[0];
+  if (abs(xi-x[0])<(x[1]-x[0])*1e-30) return y[0];
 
   // find x's integer index
-  //long idx = binarySearch(x, x0);
-  long idx = binarySearch(x, size, x0, true);
+  //long idx = binarySearch(x, xi);
+  long idx = binarySearch(x, size, xi, true);
+//cout << "interpCubicNondirect: " << idx << endl;
 
   //if (idx<0 || idx>=size-1)
   //{
@@ -701,7 +871,7 @@ double interpCubicNonDirect(double * x, double * y, double x0, long size, bool r
 		if (!returnflag)	//i.e., if returnflag is false, exit
 		{
 			cerr << "interpCubicNonDirect(): index out of range!  Aborting!" << endl
-				<< "interpCubicNonDirect(): size = " << size << ", x0 = " << x0 << ", " << "idx=" << idx << endl;
+				<< "interpCubicNonDirect(): size = " << size << ", x0 = " << xi << ", " << "idx=" << idx << endl;
 			exit(1);
 		}
 		else return (default_return_value);
@@ -710,12 +880,12 @@ double interpCubicNonDirect(double * x, double * y, double x0, long size, bool r
   if (idx==0)
   {
     // use linear interpolation at the left end
-    return y[0] + (y[1]-y[0])/(x[1]-x[0])*(x0-x[0]);
+    return y[0] + (y[1]-y[0])/(x[1]-x[0])*(xi-x[0]);
   }
   else if (idx==size-2)
   {
     // use linear interpolation at the right end
-    return y[size-2] + (y[size-1]-y[size-2] )/(x[size-1]-x[size-2] )*(x0-x[size-2]);
+    return y[size-2] + (y[size-1]-y[size-2] )/(x[size-1]-x[size-2] )*(xi-x[size-2]);
   }
   else
   {
@@ -750,7 +920,13 @@ double interpCubicNonDirect(double * x, double * y, double x0, long size, bool r
           + x2*(-x3s*y01-x0s*y13)
           + x1s*(-x3*y02+x2*y03-x0*y23)
           )/denominator;
-    return C0 + C1*x0 + C2*x0*x0 + C3*x0*x0*x0;
+//cout << "interpCubicNondirect(list1): " << y0 << "   " << y1 << "   " << y2 << "   " << y3 << "   "
+//				<< y01 << "   " << y02 << "   " << y03 << "   " << y12 << "   " << y13 << "   " << y23 << endl;
+//cout << "interpCubicNondirect(list2): " << x0 << "   " << x1 << "   " << x2 << "   " << x3 << "   "
+//				<< x01 << "   " << x02 << "   " << x03 << "   " << x12 << "   " << x13 << "   " << x23 << endl;
+//cout << "interpCubicNondirect(list3): " << x0s << "   " << x1s << "   " << x2s << "   " << x3s << "   " << denominator << endl;
+//cout << "interpCubicNondirect(list4): " << C0 << "   " << C1 << "   " << C2 << "   " << C3 << endl;
+    return C0 + C1*xi + C2*xi*xi + C3*xi*xi*xi;
   }
 
 }
@@ -891,26 +1067,111 @@ double interpBiCubicDirectALT(double * x, double * y, double ** z, double x0, do
 
 /////////////////////////////////////////////////////////////////////////////////////////
 //**********************************************************************
-double interpBiCubicNonDirectALT(double * x, double * y, double ** z, double x0, double y0, long x_size, long y_size, bool returnflag /*= false*/, double default_return_value /* = 0*/)
+double interpBiCubicNonDirectALT(double * x, double * y, double ** f, double xi, double yi, long x_size, long y_size, bool returnflag /*= false*/, double default_return_value /* = 0*/)
 {
-	//long size = x->size();
-	if (x_size==1 && y_size) {cout<<"interpBiCubicNonDirectALT warning: table size = 1"<<endl; return z[0][0];}
-	double dx = x[1]-x[0]; // increment in x
-	double dy = y[1]-y[0]; // increment in y
-	// find x's integer index
-	long xidx = floor((x0-x[0])/dx);
-	long yidx = floor((y0-y[0])/dy);
-	
-	// check for out-of-bounds points
-	if (xidx<0 || xidx>=x_size-1 || yidx<0 || yidx>=y_size-1)
+  //long size = x->size();
+  if (x_size==1 && y_size==1) {cout<<"interpBiCubicNonDirectALT warning: table size = 1"<<endl; return f[0][0];}
+
+  // if close to left end:
+  if (abs(xi-x[0])<(x[1]-x[0])*1e-30) return interpCubicNonDirect(y, f[0], yi, y_size, returnflag, default_return_value);
+
+  // find x's integer index
+  long idx = binarySearch(x, x_size, xi, true);
+
+	if (idx < 0 || idx >= x_size-1)
 	{
 		if (!returnflag)	//i.e., if returnflag is false, exit
 		{
-			cout << "interpBiCubicNonDirectALT: point out of bounds." << endl
+			cerr << "interpBiCubicNonDirectALT(): index out of range!  Aborting!" << endl
+				<< "interpBiCubicNonDirectALT(): x_size = " << x_size << ", x0 = " << xi << ", " << "idx=" << idx << endl;
+			exit(1);
+		}
+		else return (default_return_value);
+	}
+
+  if (idx==0)
+  {
+    // use linear interpolation at the left end
+	double f0 = interpCubicNonDirect(y, f[0], yi, y_size, returnflag, default_return_value);
+	double f1 = interpCubicNonDirect(y, f[1], yi, y_size, returnflag, default_return_value);
+    return f0 + (f1-f0)/(x[1]-x[0])*(xi-x[0]);
+  }
+  else if (idx==x_size-2)
+  {
+    // use linear interpolation at the right end
+	double fnm2 = interpCubicNonDirect(y, f[x_size-2], yi, y_size, returnflag, default_return_value);
+	double fnm1 = interpCubicNonDirect(y, f[x_size-1], yi, y_size, returnflag, default_return_value);
+    return fnm2 + (fnm1-fnm2 )/(x[x_size-1]-x[x_size-2] )*(xi-x[x_size-2]);
+  }
+  else
+  {
+    // use cubic interpolation
+    long double f0 = interpCubicNonDirect(y, f[idx-1], yi, y_size, returnflag, default_return_value);
+    long double f1 = interpCubicNonDirect(y, f[idx], yi, y_size, returnflag, default_return_value);
+    long double f2 = interpCubicNonDirect(y, f[idx+1], yi, y_size, returnflag, default_return_value);
+    long double f3 = interpCubicNonDirect(y, f[idx+2], yi, y_size, returnflag, default_return_value);
+    long double f01=f0-f1, f02=f0-f2, f03=f0-f3, f12=f1-f2, f13=f1-f3, f23=f2-f3;
+    long double x0 = x[idx-1], x1 = x[idx], x2 = x[idx+1], x3 = x[idx+2];
+    long double x01=x0-x1, x02=x0-x2, x03=x0-x3, x12=x1-x2, x13=x1-x3, x23=x2-x3;
+    long double x0s=x0*x0, x1s=x1*x1, x2s=x2*x2, x3s=x3*x3;
+    long double denominator = x01*x02*x12*x03*x13*x23;
+    long double C0, C1, C2, C3;
+    C0 = (x0*x02*x2*x03*x23*x3*f1
+          + x1*x1s*(x0*x03*x3*f2+x2s*(-x3*f0+x0*f3)+x2*(x3s*f0-x0s*f3))
+          + x1*(x0s*x03*x3s*f2+x2*x2s*(-x3s*f0+x0s*f3)+x2s*(x3*x3s*f0-x0*x0s*f3))
+          + x1s*(x0*x3*(-x0s+x3s)*f2+x2*x2s*(x3*f0-x0*f3)+x2*(-x3*x3s*f0+x0*x0s*f3))
+          )/denominator;
+    C1 = (x0s*x03*x3s*f12
+          + x2*x2s*(x3s*f01+x0s*f13)
+          + x1s*(x3*x3s*f02+x0*x0s*f23-x2*x2s*f03)
+          + x2s*(-x3*x3s*f01-x0*x0s*f13)
+          + x1*x1s*(-x3s*f02+x2s*f03-x0s*f23)
+          )/denominator;
+    C2 = (-x0*x3*(x0s-x3s)*f12
+          + x2*(x3*x3s*f01+x0*x0s*f13)
+          + x1*x1s*(x3*f02+x0*f23-x2*f03)
+          + x2*x2s*(-x3*f01-x0*f13)
+          + x1*(-x3*x3s*f02+x2*x2s*f03-x0*x0s*f23)
+          )/denominator;
+    C3 = (x0*x03*x3*f12
+          + x2s*(x3*f01+x0*f13)
+          + x1*(x3s*f02+x0s*f23-x2s*f03)
+          + x2*(-x3s*f01-x0s*f13)
+          + x1s*(-x3*f02+x2*f03-x0*f23)
+          )/denominator;
+    return C0 + C1*xi + C2*xi*xi + C3*xi*xi*xi;
+  }
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+//**********************************************************************
+double interpTriCubicNonDirect(double * x, double * y, double * z, double *** t, double x0, double y0, double z0,
+									long x_size, long y_size, long z_size, bool returnflag /*= false*/, double default_return_value /* = 0*/)
+{
+	//long size = x->size();
+	if (x_size==1 && y_size==1) {cout<<"interpBiCubicNonDirectALT warning: table size = 1"<<endl; return t[0][0][0];}
+	double dx = x[1]-x[0]; // increment in x
+	double dy = y[1]-y[0]; // increment in y
+	double dz = z[1]-z[0]; // increment in z
+	// find x's integer index
+	long xidx = floor((x0-x[0])/dx);
+	long yidx = floor((y0-y[0])/dy);
+	long zidx = floor((z0-z[0])/dz);
+	
+	// check for out-of-bounds points
+	if (xidx<0 || xidx>=x_size-1 || yidx<0 || yidx>=y_size-1 || zidx<0 || zidx>=z_size-1)
+	{
+		if (!returnflag)	//i.e., if returnflag is false, exit
+		{
+			cout << "interpTriCubicNonDirect: point out of bounds." << endl
 				<< "x ranges from " << x[0] << " to " << x[x_size-1] << ", "
 				<< "x0=" << x0 << ", " << "dx=" << dx << ", " << "xidx=" << xidx << endl
 				<< "y ranges from " << y[0] << " to " << y[y_size-1] << ", "
-				<< "y0=" << y0 << ", " << "dy=" << dy << ", " << "yidx=" << yidx << endl;
+				<< "y0=" << y0 << ", " << "dy=" << dy << ", " << "yidx=" << yidx << endl
+				<< "z ranges from " << z[0] << " to " << z[z_size-1] << ", "
+				<< "z0=" << z0 << ", " << "dz=" << dz << ", " << "zidx=" << zidx << endl;
     			exit(1);
 		}
 		else return (default_return_value);
@@ -919,28 +1180,28 @@ double interpBiCubicNonDirectALT(double * x, double * y, double ** z, double x0,
   if (xidx==0)
   {
     // use quadratic interpolation at left end
-    double A0 = interpCubicNonDirect(y, z[0], y0, y_size);
-	double A1 = interpCubicNonDirect(y, z[1], y0, y_size);
-	double A2 = interpCubicNonDirect(y, z[2], y0, y_size);
+    double A0 = interpBiCubicNonDirectALT(y, z, t[0], y0, z0, y_size, z_size);
+	double A1 = interpBiCubicNonDirectALT(y, z, t[1], y0, z0, y_size, z_size);
+	double A2 = interpBiCubicNonDirectALT(y, z, t[2], y0, z0, y_size, z_size);
 	double deltaX = x0 - x[0]; // deltaX is the increment of x0 compared to the closest lattice point
     return (A0-2.0*A1+A2)/(2.0*dx*dx)*deltaX*deltaX - (3.0*A0-4.0*A1+A2)/(2.0*dx)*deltaX + A0;
   }
   else if (xidx==x_size-2)
   {
     // use quadratic interpolation at right end
-    double A0 = interpCubicNonDirect(y, z[x_size-3], y0, y_size);
-	double A1 = interpCubicNonDirect(y, z[x_size-2], y0, y_size);
-	double A2 = interpCubicNonDirect(y, z[x_size-1], y0, y_size);
+    double A0 = interpBiCubicNonDirectALT(y, z, t[x_size-3], y0, z0, y_size, z_size);
+	double A1 = interpBiCubicNonDirectALT(y, z, t[x_size-2], y0, z0, y_size, z_size);
+	double A2 = interpBiCubicNonDirectALT(y, z, t[x_size-1], y0, z0, y_size, z_size);
 	double deltaX = x0 - (x[0] + (xidx-1)*dx);
     return (A0-2.0*A1+A2)/(2.0*dx*dx)*deltaX*deltaX - (3.0*A0-4.0*A1+A2)/(2.0*dx)*deltaX + A0;
   }
   else
   {
     // use cubic interpolation
-    double A0 = interpCubicNonDirect(y, z[xidx-1], y0, y_size);
-	double A1 = interpCubicNonDirect(y, z[xidx], y0, y_size);
-	double A2 = interpCubicNonDirect(y, z[xidx+1], y0, y_size);
-	double A3 = interpCubicNonDirect(y, z[xidx+2], y0, y_size);
+    double A0 = interpBiCubicNonDirectALT(y, z, t[xidx-1], y0, z0, y_size, z_size);
+	double A1 = interpBiCubicNonDirectALT(y, z, t[xidx], y0, z0, y_size, z_size);
+	double A2 = interpBiCubicNonDirectALT(y, z, t[xidx+1], y0, z0, y_size, z_size);
+	double A3 = interpBiCubicNonDirectALT(y, z, t[xidx+2], y0, z0, y_size, z_size);
 	double deltaX = x0 - (x[0] + xidx*dx);
     //cout << A0 << "  " << A1 << "  " << A2 << "  " << A3 << endl;
     return (-A0+3.0*A1-3.0*A2+A3)/(6.0*dx*dx*dx)*deltaX*deltaX*deltaX
@@ -950,6 +1211,76 @@ double interpBiCubicNonDirectALT(double * x, double * y, double ** z, double x0,
   }
 }
 
+
+/////////////////////////////////////////////////////////////////////////////////////////
+//**********************************************************************
+double interpQuadriCubicNonDirect(double * x, double * y, double * z, double * t, double **** f, double x0, double y0, double z0, double t0,
+									long x_size, long y_size, long z_size, long t_size, bool returnflag /*= false*/, double default_return_value /* = 0*/)
+{
+	//long size = x->size();
+	if (x_size==1 && y_size==1 && z_size==1 && t_size==1) {cout<<"interpBiCubicNonDirectALT warning: table size = 1"<<endl; return f[0][0][0][0];}
+	double dx = x[1]-x[0]; // increment in x
+	double dy = y[1]-y[0]; // increment in y
+	double dz = z[1]-z[0]; // increment in z
+	double dt = t[1]-t[0]; // increment in t
+	// find x's integer index
+	long xidx = floor((x0-x[0])/dx);
+	long yidx = floor((y0-y[0])/dy);
+	long zidx = floor((z0-z[0])/dz);
+	long tidx = floor((t0-t[0])/dt);
+	
+	// check for out-of-bounds points
+	if (xidx<0 || xidx>=x_size-1 || yidx<0 || yidx>=y_size-1 || zidx<0 || zidx>=z_size-1|| tidx<0 || tidx>=t_size-1)
+	{
+		if (!returnflag)	//i.e., if returnflag is false, exit
+		{
+			cout << "interpQuadriCubicNonDirect: point out of bounds." << endl
+				<< "x ranges from " << x[0] << " to " << x[x_size-1] << ", "
+				<< "x0=" << x0 << ", " << "dx=" << dx << ", " << "xidx=" << xidx << endl
+				<< "y ranges from " << y[0] << " to " << y[y_size-1] << ", "
+				<< "y0=" << y0 << ", " << "dy=" << dy << ", " << "yidx=" << yidx << endl
+				<< "z ranges from " << z[0] << " to " << z[z_size-1] << ", "
+				<< "z0=" << z0 << ", " << "dz=" << dz << ", " << "zidx=" << zidx << endl
+				<< "t ranges from " << t[0] << " to " << t[t_size-1] << ", "
+				<< "t0=" << t0 << ", " << "dt=" << dt << ", " << "tidx=" << tidx << endl;
+    			exit(1);
+		}
+		else return (default_return_value);
+	}
+
+  if (xidx==0)
+  {
+    // use quadratic interpolation at left end
+    double A0 = interpTriCubicNonDirect(y, z, t, f[0], y0, z0, t0, y_size, z_size, t_size);
+	double A1 = interpTriCubicNonDirect(y, z, t, f[1], y0, z0, t0, y_size, z_size, t_size);
+	double A2 = interpTriCubicNonDirect(y, z, t, f[2], y0, z0, t0, y_size, z_size, t_size);
+	double deltaX = x0 - x[0]; // deltaX is the increment of x0 compared to the closest lattice point
+    return (A0-2.0*A1+A2)/(2.0*dx*dx)*deltaX*deltaX - (3.0*A0-4.0*A1+A2)/(2.0*dx)*deltaX + A0;
+  }
+  else if (xidx==x_size-2)
+  {
+    // use quadratic interpolation at right end
+    double A0 = interpTriCubicNonDirect(y, z, t, f[x_size-3], y0, z0, t0, y_size, z_size, t_size);
+	double A1 = interpTriCubicNonDirect(y, z, t, f[x_size-2], y0, z0, t0, y_size, z_size, t_size);
+	double A2 = interpTriCubicNonDirect(y, z, t, f[x_size-1], y0, z0, t0, y_size, z_size, t_size);
+	double deltaX = x0 - (x[0] + (xidx-1)*dx);
+    return (A0-2.0*A1+A2)/(2.0*dx*dx)*deltaX*deltaX - (3.0*A0-4.0*A1+A2)/(2.0*dx)*deltaX + A0;
+  }
+  else
+  {
+    // use cubic interpolation
+    double A0 = interpTriCubicNonDirect(y, z, t, f[xidx-1], y0, z0, t0, y_size, z_size, t_size);
+	double A1 = interpTriCubicNonDirect(y, z, t, f[xidx], y0, z0, t0, y_size, z_size, t_size);
+	double A2 = interpTriCubicNonDirect(y, z, t, f[xidx+1], y0, z0, t0, y_size, z_size, t_size);
+	double A3 = interpTriCubicNonDirect(y, z, t, f[xidx+2], y0, z0, t0, y_size, z_size, t_size);
+	double deltaX = x0 - (x[0] + xidx*dx);
+    //cout << A0 << "  " << A1 << "  " << A2 << "  " << A3 << endl;
+    return (-A0+3.0*A1-3.0*A2+A3)/(6.0*dx*dx*dx)*deltaX*deltaX*deltaX
+            + (A0-2.0*A1+A2)/(2.0*dx*dx)*deltaX*deltaX
+            - (2.0*A0+3.0*A1-6.0*A2+A3)/(6.0*dx)*deltaX
+            + A1;
+  }
+}
 
 
 /////////////////////////////////////////////////////////////////////////////////////////

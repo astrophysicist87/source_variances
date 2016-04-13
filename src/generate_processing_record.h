@@ -16,7 +16,7 @@ void initialize_PRfile(string currentworkingdirectory, string PRfilename = "Proc
 	filename_stream << currentworkingdirectory << "/" << PRfilename;
 	ofstream output(filename_stream.str().c_str(), ios::app);
 
-	string lambdaflagstring = lambdaflag ? truestring : falsestring;
+	//string lambdaflagstring = lambdaflag ? truestring : falsestring;
 
 	output << "/***************************************************/" << endl;
 	output << "/****************" << PRfilename << "**************/" << endl;
@@ -29,14 +29,9 @@ void initialize_PRfile(string currentworkingdirectory, string PRfilename = "Proc
 	output << "      --> eta_s_i: " << eta_s_i << endl;
 	output << "      --> eta_s_f: " << eta_s_f << endl;
 
-	//output << "   - Relative momentum information:" << endl;
-	//output << "      --> qnpts: " << qnpts << endl;
-	//output << "      --> delta_q: " << delta_q << endl;
-	//output << "      --> init_q: " << init_q << endl;
-
-	output << "   - Correlation function information:" << endl;
-	output << "      --> corrfuncdim: " << corrfuncdim << endl;
-	output << "      --> lambdaflag: " << lambdaflagstring << endl;
+	//output << "   - Correlation function information:" << endl;
+	//output << "      --> corrfuncdim: " << corrfuncdim << endl;
+	//output << "      --> lambdaflag: " << lambdaflagstring << endl;
 
 	output << "   - Pair momentum information:" << endl;
 	output << "      --> n_localp_T: " << n_localp_T << endl;
